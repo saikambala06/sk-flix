@@ -476,7 +476,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase}
 // ══════════════════════════════════════════════════════
 //  CONFIGURATION & STATE
 // ══════════════════════════════════════════════════════
-const API = window.location.hostname === 'localhost' ? 'https://sk-flix-five.vercel.app/api' : '/api';
+const API = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
 
 let state = {
   user: null, token: null, heroMovie: null, currentMovie: null, playerMovie: null, searchTimer: null
