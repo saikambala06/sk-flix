@@ -758,85 +758,178 @@ function heroInfoAction(){
 }
 
 // ══════════════════════════════════════════════════════════
-//  DETAIL MODAL (with prominent close button)
+//  DETAIL MODAL
 // ══════════════════════════════════════════════════════════
 function openDetail(movie){
   state.currentMovie=movie;
   const body=document.getElementById('detailBody');
   const imgSrc=movie.backdropUrl||movie.posterUrl||'';
-  const hasImg=imgSrc&&imgSrc.startsWith('http');
   const hasVideo=movie.videoUrl||movie.hlsUrl;
+  const addedToWishlist = isWishlisted(movie._id);
 
   body.innerHTML=`
-    <button class="detail-close" onclick="closeDetail()" title="Close">✕</button>
-    ${hasImg?`<div class="modal-hero"><img src="${imgSrc}" alt="${movie.title}" onerror="this.parentElement.style.display='none'"/><div class="modal-hero-grad"></div></div>`
-    :'<div style="height:80px;background:linear-gradient(135deg,var(--surface),var(--bg3));border-radius:var(--radius-lg) var(--radius-lg) 0 0"></div>'}
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    ${imgSrc?`<div class="modal-hero"><img src="${imgSrc}"/><div class="modal-hero-grad"></div></div>`:''}
     <div class="modal-body-inner">
       <h2 class="modal-title">${movie.title}</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        ${movie.releaseYear?`<span style="font-size:.85rem;color:var(--muted)">${movie.releaseYear}</span>`:''}
-        ${movie.rating?`<span style="font-size:.85rem;color:var(--gold);font-weight:600">⭐ ${movie.rating}</span>`:''}
-        <span style="background:rgba(255,255,255,.08);padding:2px 10px;border-radius:4px;font-size:.78rem;font-weight:500">${(movie.type||'movie').toUpperCase()}</span>
-      </div>
       <p class="modal-desc">${movie.description||'No description available.'}</p>
       <div class="modal-actions">
-        <button class="modal-play" onclick="openPlayer(state.currentMovie);closeDetail()" ${hasVideo?'':'disabled'}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          ${hasVideo?'Play Now':'No Video Available'}
+        <button class="modal-play" onclick="if(requireAuth()){openPlayer(state.currentMovie);closeDetail();}" ${hasVideo?'':'disabled'}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Play Now
+        </button>
+        <button class="btn-info ${addedToWishlist?'active-wishlist':''}" id="modalWishlistBtn" onclick="toggleModalWishlist(state.currentMovie)">
+          ${addedToWishlist 
+            ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Added` 
+            : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> My List`}
         </button>
       </div>
     </div>
   `;
   document.getElementById('detailOverlay').classList.add('active');
-  document.body.style.overflow='hidden';
-}
-function closeDetail(){
-  document.getElementById('detailOverlay').classList.remove('active');
-  document.body.style.overflow='';
 }
 
+function toggleModalWishlist(movie) {
+  toggleWishlist(movie);
+  openDetail(movie); // re-render to update button state
+}
+function closeDetail(){ document.getElementById('detailOverlay').classList.remove('active'); }
+
 // ══════════════════════════════════════════════════════════
-//  VIDEO PLAYER
+//  CUSTOM VIDEO PLAYER CONTROLS
 // ══════════════════════════════════════════════════════════
+const video = document.getElementById('videoPlayer');
+const playerUI = document.getElementById('playerUI');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const progressBar = document.getElementById('progressBar');
+const progressContainer = document.getElementById('progressContainer');
+const volumeSlider = document.getElementById('volumeSlider');
+const muteBtn = document.getElementById('muteBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+let hideUI_Timeout;
+
+function formatTime(sec){
+  const m=Math.floor(sec/60); const s=Math.floor(sec%60);
+  return `${m}:${s<10?'0':''}${s}`;
+}
+
+function togglePlay() {
+  if (video.paused) video.play(); else video.pause();
+}
+
+// Update Play/Pause Icons
+video.addEventListener('play', () => {
+  document.getElementById('iconPlay').style.display = 'none';
+  document.getElementById('iconPause').style.display = 'block';
+});
+video.addEventListener('pause', () => {
+  document.getElementById('iconPlay').style.display = 'block';
+  document.getElementById('iconPause').style.display = 'none';
+});
+
+// Click video to play/pause
+video.addEventListener('click', togglePlay);
+playPauseBtn.addEventListener('click', togglePlay);
+
+// Time and Progress Update
+video.addEventListener('timeupdate', () => {
+  document.getElementById('currentTimeDisplay').innerText = formatTime(video.currentTime);
+  const percent = (video.currentTime / video.duration) * 100;
+  progressBar.style.width = `${percent}%`;
+});
+
+// Duration Setup
+video.addEventListener('loadedmetadata', () => {
+  document.getElementById('durationDisplay').innerText = formatTime(video.duration);
+});
+
+// Seek Functionality
+progressContainer.addEventListener('click', (e) => {
+  const rect = progressContainer.getBoundingClientRect();
+  const pos = (e.clientX - rect.left) / rect.width;
+  video.currentTime = pos * video.duration;
+});
+
+// Volume & Mute
+volumeSlider.addEventListener('input', (e) => {
+  video.volume = e.target.value;
+  video.muted = (video.volume === 0);
+  updateMuteIcon();
+});
+
+function updateMuteIcon() {
+  if (video.muted || video.volume === 0) {
+    document.getElementById('iconVol').style.display = 'none';
+    document.getElementById('iconMute').style.display = 'block';
+  } else {
+    document.getElementById('iconVol').style.display = 'block';
+    document.getElementById('iconMute').style.display = 'none';
+  }
+}
+
+muteBtn.addEventListener('click', () => {
+  video.muted = !video.muted;
+  if(video.muted) volumeSlider.value = 0;
+  else volumeSlider.value = video.volume || 1;
+  updateMuteIcon();
+});
+
+// Fullscreen
+fullscreenBtn.addEventListener('click', () => {
+  const wrap = document.getElementById('videoWrap');
+  if (!document.fullscreenElement) { wrap.requestFullscreen().catch(err=>{}); } 
+  else { document.exitFullscreen(); }
+});
+
+// Auto Hide Controls
+function resetIdleTimer() {
+  playerUI.classList.remove('idle');
+  document.body.style.cursor = 'default';
+  clearTimeout(hideUI_Timeout);
+  if (!video.paused) {
+    hideUI_Timeout = setTimeout(() => {
+      playerUI.classList.add('idle');
+      document.body.style.cursor = 'none';
+    }, 3000);
+  }
+}
+
+document.getElementById('videoWrap').addEventListener('mousemove', resetIdleTimer);
+document.getElementById('videoWrap').addEventListener('mouseleave', () => { if(!video.paused) playerUI.classList.add('idle'); });
+video.addEventListener('pause', () => { playerUI.classList.remove('idle'); clearTimeout(hideUI_Timeout); });
+
+// Open Player Flow
 function openPlayer(movie){
   const src=movie.hlsUrl||movie.videoUrl;
-  if(!src){
-    showToast('No video URL available for this content.','error');
-    return;
-  }
-  const overlay=document.getElementById('playerOverlay');
-  const video=document.getElementById('videoPlayer');
-  document.getElementById('playerTitle').textContent=movie.title;
-
-  // Destroy previous HLS instance
+  if(!src) return showToast('No video available.','error');
+  
+  document.getElementById('playerTitle').textContent = movie.title;
+  
   if(state.playerHls){state.playerHls.destroy();state.playerHls=null;}
-  video.removeAttribute('src');video.load();
+  video.removeAttribute('src'); video.load();
+  progressBar.style.width = '0%';
+  document.getElementById('currentTimeDisplay').innerText = '0:00';
 
   if(src.includes('.m3u8')&&typeof Hls!=='undefined'&&Hls.isSupported()){
-    state.playerHls=new Hls({enableWorker:true,lowLatencyMode:false});
+    state.playerHls=new Hls();
     state.playerHls.loadSource(src);
     state.playerHls.attachMedia(video);
-    state.playerHls.on(Hls.Events.MANIFEST_PARSED,()=>{video.play().catch(()=>{});});
-    state.playerHls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal){showToast('Video stream error. Trying again...','error');state.playerHls.startLoad();}});
-  }else if(src.includes('.m3u8')&&video.canPlayType('application/vnd.apple.mpegurl')){
-    video.src=src;video.addEventListener('loadedmetadata',()=>video.play().catch(()=>{}),{once:true});
+    state.playerHls.on(Hls.Events.MANIFEST_PARSED, ()=>video.play().catch(()=>{}));
   }else{
-    video.src=src;video.play().catch(()=>{});
+    video.src=src; video.play().catch(()=>{});
   }
 
-  overlay.classList.add('active');
-  document.body.style.overflow='hidden';
+  document.getElementById('playerOverlay').classList.add('active');
+  resetIdleTimer();
 }
 
 function closePlayer(){
-  const video=document.getElementById('videoPlayer');
   video.pause();
+  if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
   if(state.playerHls){state.playerHls.destroy();state.playerHls=null;}
-  video.removeAttribute('src');video.load();
+  video.removeAttribute('src'); video.load();
   document.getElementById('playerOverlay').classList.remove('active');
-  document.body.style.overflow='';
 }
-
 // ══════════════════════════════════════════════════════════
 //  ADMIN PANEL
 // ══════════════════════════════════════════════════════════
