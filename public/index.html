@@ -82,6 +82,10 @@ img{display:block;max-width:100%}
 .btn-play{display:flex;align-items:center;gap:8px;background:var(--gold);color:#000;padding:14px 30px;border-radius:99px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;transition:all var(--transition);box-shadow:0 8px 30px rgba(224,168,48,.35)}
 .btn-play:hover{background:var(--gold2);transform:translateY(-2px);box-shadow:0 12px 40px rgba(224,168,48,.5)}
 .btn-play:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-wishlist{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);color:var(--text);padding:14px 28px;border-radius:99px;border:1px solid rgba(255,255,255,.15);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;backdrop-filter:blur(10px);transition:all var(--transition)}
+.btn-wishlist:hover{background:rgba(255,255,255,.16);transform:translateY(-2px)}
+.btn-wishlist.wishlisted{background:rgba(224,168,48,.15);border-color:rgba(224,168,48,.5);color:var(--gold)}
+.btn-wishlist.wishlisted svg{fill:var(--gold)}
 .btn-info{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);color:var(--text);padding:14px 28px;border-radius:99px;border:1px solid rgba(255,255,255,.15);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;backdrop-filter:blur(10px);transition:all var(--transition)}
 .btn-info:hover{background:rgba(255,255,255,.18);transform:translateY(-2px)}
 .btn-info:disabled{opacity:.3;cursor:not-allowed;transform:none}
@@ -103,6 +107,11 @@ img{display:block;max-width:100%}
 .card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.3) 50%,transparent 100%);opacity:0;transition:opacity var(--transition);display:flex;flex-direction:column;justify-content:flex-end;padding:12px}
 .card-play-btn{width:40px;height:40px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;color:#000;box-shadow:0 4px 20px rgba(224,168,48,.5);transition:transform var(--transition)}
 .card-play-btn:hover{transform:scale(1.1)}
+.card-wish-btn{position:absolute;top:8px;left:50%;transform:translateX(-50%) translateY(-30px);opacity:0;width:32px;height:32px;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;color:var(--muted);transition:all var(--transition);z-index:5;padding:0}
+.movie-card:hover .card-wish-btn{opacity:1;transform:translateX(-50%) translateY(0)}
+.card-wish-btn:hover{background:rgba(0,0,0,.9);transform:translateX(-50%) scale(1.15)!important}
+.card-wish-btn.wishlisted{color:var(--gold)}
+.card-wish-btn.wishlisted svg{fill:var(--gold)}
 .card-title{font-size:.8rem;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-year{font-size:.7rem;color:var(--muted);text-align:center;margin-top:2px}
 .card-rating{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);color:var(--gold);padding:3px 7px;border-radius:6px;font-size:.7rem;font-weight:700}
@@ -205,9 +214,13 @@ img{display:block;max-width:100%}
 .modal-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;margin-bottom:8px}
 .modal-desc{color:rgba(240,240,248,.75);line-height:1.7;margin-bottom:22px;font-size:.95rem}
 .modal-actions{display:flex;gap:10px;flex-wrap:wrap}
-.modal-play{flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--gold);color:#000;border:none;border-radius:99px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all var(--transition)}
+.modal-play{flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--gold);color:#000;border:none;border-radius:99px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all var(--transition)}
 .modal-play:hover{background:var(--gold2)}
 .modal-play:disabled{opacity:.4;cursor:not-allowed}
+.modal-wish{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.08);color:var(--text);border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:12px 20px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:500;transition:all var(--transition);white-space:nowrap}
+.modal-wish:hover{background:rgba(255,255,255,.16);transform:translateY(-2px)}
+.modal-wish.wishlisted{background:rgba(224,168,48,.15);border-color:rgba(224,168,48,.5);color:var(--gold)}
+.modal-wish.wishlisted svg{fill:var(--gold)}
 
 .player-overlay{position:fixed;inset:0;z-index:3000;background:#000;opacity:0;pointer-events:none;transition:opacity .3s}
 .player-overlay.active{opacity:1;pointer-events:all}
@@ -244,8 +257,14 @@ img{display:block;max-width:100%}
 .admin-nav-item.active{color:var(--gold);background:rgba(224,168,48,.07);border-left-color:var(--gold)}
 .admin-main{flex:1;padding:32px;overflow-y:auto}
 .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
-.admin-header h1{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700}
-.admin-close{background:rgba(255,255,255,.07);border:none;color:var(--muted);padding:9px 18px;border-radius:99px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;transition:all var(--transition)}
+.admin-header-left{display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:1}
+.admin-header-left h1{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;white-space:nowrap}
+.admin-search{position:relative;max-width:320px;flex:1;min-width:180px}
+.admin-search input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:9px 14px 9px 36px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);outline:none;transition:border-color var(--transition)}
+.admin-search input:focus{border-color:var(--gold)}
+.admin-search input::placeholder{color:rgba(136,136,170,.5)}
+.admin-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.admin-close{background:rgba(255,255,255,.07);border:none;color:var(--muted);padding:9px 18px;border-radius:99px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;transition:all var(--transition);white-space:nowrap}
 .admin-close:hover{color:var(--text);background:rgba(255,255,255,.12)}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:32px}
 .stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
@@ -253,7 +272,7 @@ img{display:block;max-width:100%}
 .stat-value{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;line-height:1}
 .admin-table-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);overflow-x:auto}
 table{width:100%;border-collapse:collapse}
-th,td{padding:12px 22px;text-align:left;border-bottom:1px solid var(--border);font-size:.88rem;white-space:nowrap}
+th,td{padding:12px 18px;text-align:left;border-bottom:1px solid var(--border);font-size:.88rem;white-space:nowrap}
 th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-transform:uppercase}
 .upload-panel{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px}
 .admin-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);outline:none;transition:border-color var(--transition)}
@@ -262,6 +281,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 .admin-input option{background:var(--bg3)}
 .btn-submit{background:var(--gold);color:#000;border:none;border-radius:99px;padding:12px 28px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all var(--transition)}
 .btn-submit:hover{background:var(--gold2);transform:translateY(-1px)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .admin-gate{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .admin-gate-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;max-width:400px;width:100%;text-align:center}
 .admin-gate-card h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:6px}
@@ -273,6 +293,43 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 .admin-error-box{background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.25);border-radius:var(--radius);padding:28px;text-align:center}
 .admin-error-box p{color:#ff6b7a;font-size:.95rem;margin-bottom:16px}
 .admin-error-box button{background:var(--gold);color:#000;border:none;border-radius:99px;padding:10px 24px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700}
+.btn-table-action{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.8rem;font-weight:500;transition:all var(--transition);display:inline-flex;align-items:center;gap:4px}
+.btn-table-action:hover{color:var(--text);background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15)}
+.btn-table-action.delete:hover{color:var(--red);background:rgba(255,71,87,.08);border-color:rgba(255,71,87,.3)}
+.btn-table-action.edit:hover{color:var(--cyan);background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.3)}
+.confirm-delete-box{background:var(--bg3);border:1px solid rgba(255,71,87,.3);border-radius:var(--radius-lg);padding:32px;text-align:center;max-width:420px;margin:40px auto}
+.confirm-delete-box h3{font-size:1.2rem;margin-bottom:8px;color:var(--text)}
+.confirm-delete-box p{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+.confirm-delete-box .cd-title{color:var(--gold);font-weight:700}
+.confirm-btns{display:flex;gap:10px;justify-content:center}
+.btn-confirm-del{background:var(--red);color:#fff;border:none;border-radius:99px;padding:10px 24px;cursor:pointer;font-family:inherit;font-size:.9rem;font-weight:600;transition:all var(--transition)}
+.btn-confirm-del:hover{background:#e83e50;transform:translateY(-1px)}
+.btn-confirm-cancel{background:none;border:1px solid var(--border);color:var(--muted);border-radius:99px;padding:10px 24px;cursor:pointer;font-family:inherit;font-size:.9rem;transition:all var(--transition)}
+.btn-confirm-cancel:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+
+.file-upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:all var(--transition);position:relative;overflow:hidden}
+.file-upload-zone:hover{border-color:var(--gold);background:rgba(224,168,48,.04)}
+.file-upload-zone.dragover{border-color:var(--gold);background:rgba(224,168,48,.08);transform:scale(1.01)}
+.file-upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
+.file-upload-zone .fuz-icon{font-size:2rem;margin-bottom:8px;display:block;opacity:.5}
+.file-upload-zone .fuz-label{font-size:.88rem;color:var(--text);font-weight:500}
+.file-upload-zone .fuz-hint{font-size:.75rem;color:var(--muted);margin-top:4px}
+.file-upload-zone .fuz-preview{margin-top:12px;display:none}
+.file-upload-zone .fuz-preview img{max-height:120px;border-radius:8px;margin:0 auto}
+.file-upload-zone .fuz-preview video{max-height:120px;border-radius:8px;margin:0 auto}
+.file-upload-zone .fuz-filename{font-size:.82rem;color:var(--gold);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+.file-upload-zone .fuz-remove{background:none;border:1px solid var(--border);color:var(--red);padding:2px 10px;border-radius:6px;cursor:pointer;font-size:.75rem;font-family:inherit;transition:all var(--transition)}
+.file-upload-zone .fuz-remove:hover{background:rgba(255,71,87,.1);border-color:rgba(255,71,87,.3)}
+.file-upload-zone.has-file{border-color:var(--green);border-style:solid}
+.file-progress{margin-top:8px;display:none}
+.file-progress-bar{height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
+.file-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;transition:width .2s}
+.file-progress-text{font-size:.72rem;color:var(--muted);margin-top:4px}
+.upload-tabs{display:flex;gap:0;background:rgba(255,255,255,.05);border-radius:10px;padding:4px;margin-bottom:20px}
+.upload-tab{flex:1;padding:9px;border-radius:7px;border:none;background:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;transition:all var(--transition)}
+.upload-tab.active{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.upload-method{display:none}
+.upload-method.active{display:block}
 
 .toast-container{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.88rem;min-width:220px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4);animation:slideInRight .3s ease;display:flex;align-items:center;gap:10px}
@@ -287,7 +344,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 .loading-bar{width:180px;height:3px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
 .loading-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;animation:loadBar 1.8s ease-in-out infinite}
 
-.user-menu{display:none;position:absolute;right:0;top:48px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:6px;min-width:200px;z-index:200;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.user-menu{display:none;position:absolute;right:0;top:48px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:6px;min-width:210px;z-index:200;box-shadow:0 12px 40px rgba(0,0,0,.6)}
 .user-menu.show{display:block}
 .user-menu-header{padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
 .user-menu-header .um-name{font-weight:600;font-size:.9rem}
@@ -297,6 +354,22 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 .user-menu-item:hover{color:var(--text);background:rgba(255,255,255,.05)}
 .user-menu-item.danger{color:var(--red)}
 .user-menu-item.danger:hover{background:rgba(255,71,87,.1)}
+
+.wishlist-overlay{position:fixed;inset:0;z-index:2000;background:rgba(8,8,16,.97);backdrop-filter:blur(20px);overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .25s}
+.wishlist-overlay.active{opacity:1;pointer-events:all}
+.wishlist-inner{max-width:1000px;margin:0 auto;padding:100px clamp(16px,5vw,60px) 60px}
+.wishlist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.wishlist-header h1{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:2px}
+.wishlist-header h1 span{color:var(--gold)}
+.wishlist-count{color:var(--muted);font-size:.9rem}
+.wishlist-close-btn{background:rgba(255,255,255,.07);border:none;color:var(--muted);padding:9px 18px;border-radius:99px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;transition:all var(--transition)}
+.wishlist-close-btn:hover{color:var(--text);background:rgba(255,255,255,.12)}
+.wishlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.wishlist-card{border-radius:var(--radius);overflow:hidden;position:relative;cursor:pointer;transition:transform var(--transition),box-shadow var(--transition)}
+.wishlist-card:hover{transform:scale(1.05) translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.wishlist-remove{position:absolute;top:8px;right:8px;z-index:5;width:28px;height:28px;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);border:none;border-radius:50%;color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem;opacity:0;transition:opacity var(--transition)}
+.wishlist-card:hover .wishlist-remove{opacity:1}
+.wishlist-remove:hover{background:var(--red);color:#fff}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
@@ -327,17 +400,20 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   .search-input{font-size:1.1rem;padding:14px 50px 14px 18px}
   .genre-grid{grid-template-columns:repeat(2,1fr)}
   .features-grid{grid-template-columns:1fr}
+  .wishlist-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
 }
 @media(max-width:480px){
   .hero-title{font-size:3.5rem}
   .hero-btns{flex-direction:column}
-  .btn-play,.btn-info{justify-content:center;width:100%}
+  .btn-play,.btn-info,.btn-wishlist{justify-content:center;width:100%}
   .toast-container{left:16px;right:16px;bottom:16px}
   .toast{min-width:auto;max-width:none}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .admin-header h1{font-size:1.4rem}
   .auth-modal{padding:28px 20px}
   .search-results-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .wishlist-grid{grid-template-columns:repeat(2,1fr)}
+  th,td{padding:10px 12px;font-size:.8rem}
 }
 </style>
 </head>
@@ -382,7 +458,6 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 </div>
 
 <main id="mainContent">
-
   <section class="hero" id="heroSection">
     <div class="hero-bg">
       <img class="hero-bg-img hidden-img" id="heroBgImg" src="" alt="" />
@@ -398,6 +473,10 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
         <button class="btn-play" id="heroPlay" disabled onclick="heroPlayAction()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
           Play Now
+        </button>
+        <button class="btn-wishlist" id="heroWish" disabled onclick="heroWishAction()">
+          <svg id="heroWishIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span id="heroWishText">Wishlist</span>
         </button>
         <button class="btn-info" id="heroInfo" disabled onclick="heroInfoAction()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -469,7 +548,6 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
       <div class="feature-card"><span class="feat-icon">🔓</span><h3>No Hidden Fees</h3><p>Transparent pricing with no contracts. Cancel anytime — your data stays yours, always.</p></div>
     </div>
   </section>
-
 </main>
 
 <footer class="footer">
@@ -486,7 +564,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
         <button onclick="navTo('originals')">Originals</button>
         <button onclick="navTo('genres')">Genres</button>
       </div>
-      <div class="fl-col">
+      <div class="fl-col" id="footerAccountCol">
         <h4>Account</h4>
         <button onclick="openAuth('login')">Sign In</button>
         <button onclick="openAuth('signup')">Create Account</button>
@@ -506,6 +584,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   </div>
 </footer>
 
+<!-- Auth Modal -->
 <div class="overlay" id="authOverlay" onclick="if(event.target===this)closeAuth()">
   <div class="auth-modal">
     <button class="modal-close" onclick="closeAuth()">✕</button>
@@ -530,10 +609,12 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   </div>
 </div>
 
+<!-- Detail Modal -->
 <div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
   <div class="detail-modal" id="detailModal"><div id="detailBody"></div></div>
 </div>
 
+<!-- Video Player -->
 <div class="player-overlay" id="playerOverlay">
   <div class="video-wrap" id="videoWrap">
     <video id="videoPlayer" playsinline></video>
@@ -579,6 +660,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   </div>
 </div>
 
+<!-- Admin Panel -->
 <div class="admin-overlay" id="adminOverlay">
   <div class="admin-layout">
     <aside class="admin-sidebar" id="adminSidebar">
@@ -591,12 +673,20 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   </div>
 </div>
 
+<!-- Wishlist Overlay -->
+<div class="wishlist-overlay" id="wishlistOverlay">
+  <div class="wishlist-inner" id="wishlistInner"></div>
+</div>
+
 <script>
 const API='https://sk-flix-five.vercel.app/api';
 let state={
   user:null,token:null,heroMovie:null,currentMovie:null,
   playerHls:null,movies:[],series:[],originals:[],allContent:[],
-  activeGenreFilter:null,searchTimer:null,adminTab:'dashboard'
+  activeGenreFilter:null,searchTimer:null,adminTab:'dashboard',
+  adminMoviesList:[],editingMovieId:null,
+  uploadMethod:'url',
+  uploadedFiles:{poster:null,backdrop:null,video:null}
 };
 
 const GENRES=[
@@ -608,7 +698,7 @@ const GENRES=[
   {name:'Historical',cls:'g11',icon:'⏳'},{name:'Adventure',cls:'g12',icon:'🗺️'},
 ];
 
-// ═══ Normalize genres — API may return string or array ═══
+// ═══ Normalize genres ═══
 function normalizeGenres(genres){
   if(!genres)return[];
   if(Array.isArray(genres))return genres.map(g=>String(g).trim()).filter(Boolean);
@@ -633,9 +723,77 @@ async function api(path,opts={}){
   return data;
 }
 
+// ═══ File Upload to Cloudinary ═══
+function getCloudinaryConfig(){
+  const stored=localStorage.getItem('skflip_cloudinary');
+  if(stored)try{return JSON.parse(stored);}catch(e){}
+  return{cloudName:'',uploadPreset:''};
+}
+function saveCloudinaryConfig(cfg){localStorage.setItem('skflip_cloudinary',JSON.stringify(cfg));}
+
+async function uploadFileToCloudinary(file,resourceType){
+  const cfg=getCloudinaryConfig();
+  if(!cfg.cloudName||!cfg.uploadPreset){throw new Error('Cloudinary not configured. Go to Upload Content → File Upload tab and set your Cloudinary details first.');}
+  const formData=new FormData();
+  formData.append('file',file);
+  formData.append('upload_preset',cfg.uploadPreset);
+  if(resourceType==='video')formData.append('resource_type','video');
+  const res=await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/${resourceType==='video'?'video':'image'}/upload`,{method:'POST',body:formData});
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.error?.message||'Upload failed');
+  return{url:data.secure_url,publicId:data.public_id};
+}
+
+function formatFileSize(bytes){
+  if(bytes===0)return'0 B';
+  const k=1024;const sizes=['B','KB','MB','GB'];
+  const i=Math.floor(Math.log(bytes)/Math.log(k));
+  return parseFloat((bytes/Math.pow(k,i)).toFixed(1))+' '+sizes[i];
+}
+
+// ═══ Wishlist ═══
+function getWishlist(){try{return JSON.parse(localStorage.getItem('skflip_wishlist')||'[]');}catch(e){return[];}}
+function saveWishlist(list){localStorage.setItem('skflip_wishlist',JSON.stringify(list));}
+function isInWishlist(movieId){return getWishlist().some(id=>id===movieId);}
+function toggleWishlist(movieId){
+  let list=getWishlist();
+  const idx=list.indexOf(movieId);
+  if(idx>-1){list.splice(idx,1);showToast('Removed from wishlist','info');}
+  else{list.push(movieId);showToast('Added to wishlist','success');}
+  saveWishlist(list);
+  updateAllWishlistUI();
+}
+function updateAllWishlistUI(){
+  if(state.heroMovie){
+    const inW=isInWishlist(state.heroMovie._id);
+    const btn=document.getElementById('heroWish');
+    const icon=document.getElementById('heroWishIcon');
+    const txt=document.getElementById('heroWishText');
+    if(inW){btn.classList.add('wishlisted');icon.setAttribute('fill','currentColor');txt.textContent='Wishlisted';}
+    else{btn.classList.remove('wishlisted');icon.setAttribute('fill','none');txt.textContent='Wishlist';}
+  }
+  if(state.currentMovie){
+    const inW=isInWishlist(state.currentMovie._id);
+    const btn=document.getElementById('modalWishBtn');
+    if(btn){
+      if(inW){btn.classList.add('wishlisted');btn.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlisted`;}
+      else{btn.classList.remove('wishlisted');btn.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlist`;}
+    }
+  }
+  document.querySelectorAll('.card-wish-btn').forEach(btn=>{
+    const id=btn.dataset.movieId;
+    if(id){
+      const inW=isInWishlist(id);
+      btn.classList.toggle('wishlisted',inW);
+      btn.querySelector('svg').setAttribute('fill',inW?'currentColor':'none');
+    }
+  });
+}
+function heroWishAction(){if(state.heroMovie)toggleWishlist(state.heroMovie._id);}
+
 // ═══ Auth ═══
-function setAuth(token,user){state.token=token;state.user=user;localStorage.setItem('skflip_token',token);localStorage.setItem('skflip_user',JSON.stringify(user));renderNav();}
-function clearAuth(){state.token=null;state.user=null;localStorage.removeItem('skflip_token');localStorage.removeItem('skflip_user');renderNav();}
+function setAuth(token,user){state.token=token;state.user=user;localStorage.setItem('skflip_token',token);localStorage.setItem('skflip_user',JSON.stringify(user));renderNav();renderFooter();}
+function clearAuth(){state.token=null;state.user=null;localStorage.removeItem('skflip_token');localStorage.removeItem('skflip_user');renderNav();renderFooter();}
 function loadStoredAuth(){const t=localStorage.getItem('skflip_token');const u=localStorage.getItem('skflip_user');if(t&&u){try{state.token=t;state.user=JSON.parse(u);}catch(e){clearAuth();}}}
 
 function renderNav(){
@@ -643,15 +801,26 @@ function renderNav(){
   if(state.user){
     const initials=(state.user.name||'U').slice(0,2).toUpperCase();
     const isAdmin=state.user.role==='admin';
+    const wishCount=getWishlist().length;
     area.innerHTML=`<div style="display:flex;align-items:center;gap:10px;position:relative">
       ${isAdmin?`<button class="btn-icon" onclick="openAdmin()" title="Admin Portal">⚙️</button>`:''}
       <div class="user-avatar" onclick="toggleUserMenu()">${initials}</div>
       <div class="user-menu" id="userMenu">
         <div class="user-menu-header"><div class="um-name">${state.user.name}</div><div class="um-email">${state.user.email}</div>${isAdmin?'<div class="um-role">ADMIN</div>':''}</div>
+        <button class="user-menu-item" onclick="openWishlist();closeUserMenu()">❤️ Wishlist ${wishCount>0?`<span style="color:var(--gold);font-weight:600;margin-left:auto">(${wishCount})</span>`:''}</button>
         ${isAdmin?'<button class="user-menu-item" onclick="openAdmin();closeUserMenu()">⚙️ Admin Portal</button>':''}
-        <button class="user-menu-item danger" onclick="handleLogout()">Sign Out</button>
+        <button class="user-menu-item danger" onclick="handleLogout()">🚪 Sign Out</button>
       </div></div>`;
   }else{area.innerHTML=`<button class="btn-signup desktop-only" onclick="openAuth('login')">Sign In</button>`;}
+}
+function renderFooter(){
+  const col=document.getElementById('footerAccountCol');
+  if(!col)return;
+  if(state.user){
+    col.innerHTML=`<h4>Account</h4><button onclick="openWishlist()">❤️ My Wishlist</button>${state.user.role==='admin'?'<button onclick="openAdmin()">⚙️ Admin Portal</button>':''}<button onclick="handleLogout()">🚪 Sign Out</button>`;
+  }else{
+    col.innerHTML=`<h4>Account</h4><button onclick="openAuth('login')">Sign In</button><button onclick="openAuth('signup')">Create Account</button><button onclick="openAdmin()">Admin Portal</button>`;
+  }
 }
 function toggleUserMenu(){const m=document.getElementById('userMenu');if(m)m.classList.toggle('show');}
 function closeUserMenu(){const m=document.getElementById('userMenu');if(m)m.classList.remove('show');}
@@ -703,6 +872,8 @@ async function fetchMovies(type){
 function showSkeletons(){['trendingRow','seriesRow','originalsRow'].forEach(id=>{const el=document.getElementById(id);el.innerHTML='';for(let i=0;i<6;i++){const s=document.createElement('div');s.className='skeleton-card';el.appendChild(s);}});}
 function emptyState(msg){return `<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 2v20M2 12h20"/></svg><span>${msg}</span></div>`;}
 
+const HEART_SVG=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+
 function createCard(item){
   const card=document.createElement('div');card.className='movie-card';
   const typeClass=item.type==='original'?'original':item.type==='series'?'series':'movie';
@@ -710,16 +881,19 @@ function createCard(item){
   const imgSrc=item.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');
   const genres=item._genres_normalized||normalizeGenres(item.genres);
   const genreTag=genres[0]||'';
+  const inW=isInWishlist(item._id);
   card.innerHTML=`
     <div class="card-badge ${typeClass}">${typeLabel}</div>
     ${item.rating?`<div class="card-rating">⭐ ${item.rating}</div>`:''}
+    <button class="card-wish-btn ${inW?'wishlisted':''}" data-movie-id="${item._id}" onclick="event.stopPropagation();toggleWishlist('${item._id}')">${HEART_SVG}</button>
     ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${item.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);padding:8px;text-align:center>${this.alt}</div>'"/>`
     :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);padding:8px;text-align:center">${item.title}</div>`}
     <div class="card-overlay">
-      <div class="card-play-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="card-play-btn" onclick="event.stopPropagation();openPlayer(state.allContent.find(m=>m._id==='${item._id}'))"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
       <div class="card-title">${item.title}</div>
       <div class="card-year">${item.releaseYear||''}${genreTag?' · '+genreTag:''}</div>
     </div>`;
+  if(inW){const svg=card.querySelector('.card-wish-btn svg');if(svg)svg.setAttribute('fill','currentColor');}
   card.addEventListener('click',()=>openDetail(item));
   return card;
 }
@@ -741,7 +915,10 @@ function setHero(movie){
   const genres=movie._genres_normalized||normalizeGenres(movie.genres);
   genres.forEach(g=>metaHtml+=`<span class="tag">${g}</span>`);
   if(metaHtml){meta.innerHTML=metaHtml;meta.style.display='flex';}else{meta.style.display='none';}
-  document.getElementById('heroPlay').disabled=false;document.getElementById('heroInfo').disabled=false;
+  document.getElementById('heroPlay').disabled=false;
+  document.getElementById('heroInfo').disabled=false;
+  document.getElementById('heroWish').disabled=false;
+  updateAllWishlistUI();
 }
 function heroPlayAction(){if(state.heroMovie)openPlayer(state.heroMovie);}
 function heroInfoAction(){if(state.heroMovie)openDetail(state.heroMovie);}
@@ -799,7 +976,6 @@ function runSearch(q){
   const extraGenreIds=new Set(extraByGenre.map(m=>m._id));
   const extraByDesc=descMatches.filter(m=>!titleIds.has(m._id)&&!extraGenreIds.has(m._id));
   const matchedGenres=GENRES.filter(g=>g.name.toLowerCase().includes(query));
-
   if(titleMatches.length===0&&extraByGenre.length===0&&extraByDesc.length===0&&matchedGenres.length===0){
     res.innerHTML=`<div class="search-hint"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg>No results for "<strong>${q.trim()}</strong>"</div>`;return;
   }
@@ -835,6 +1011,7 @@ function openDetail(movie){
   const imgSrc=movie.backdropUrl||movie.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');
   const hasVideo=movie.videoUrl||movie.hlsUrl;
   const genres=movie._genres_normalized||normalizeGenres(movie.genres);
+  const inW=isInWishlist(movie._id);
   body.innerHTML=`
     <button class="detail-close" onclick="closeDetail()" title="Close">✕</button>
     ${hasImg?`<div class="modal-hero"><img src="${imgSrc}" alt="${movie.title}" onerror="this.parentElement.style.display='none'"/><div class="modal-hero-grad"></div></div>`:'<div style="height:80px;background:linear-gradient(135deg,var(--surface),var(--bg3));border-radius:var(--radius-lg) var(--radius-lg) 0 0"></div>'}
@@ -851,13 +1028,55 @@ function openDetail(movie){
       <div class="modal-actions">
         <button class="modal-play" onclick="openPlayer(state.currentMovie);closeDetail()" ${hasVideo?'':'disabled'}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          ${hasVideo?'Play Now':'No Video Available'}
+          ${hasVideo?'Play Now':'No Video'}
+        </button>
+        <button class="modal-wish ${inW?'wishlisted':''}" id="modalWishBtn" onclick="toggleWishlist('${movie._id}')">
+          ${inW?`<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlisted`
+          :`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlist`}
         </button>
       </div>
     </div>`;
   document.getElementById('detailOverlay').classList.add('active');document.body.style.overflow='hidden';
 }
 function closeDetail(){document.getElementById('detailOverlay').classList.remove('active');document.body.style.overflow='';}
+
+// ═══ Wishlist Overlay ═══
+function openWishlist(){
+  const overlay=document.getElementById('wishlistOverlay');
+  const inner=document.getElementById('wishlistInner');
+  const wishIds=getWishlist();
+  const wishMovies=wishIds.map(id=>state.allContent.find(m=>m._id===id)).filter(Boolean);
+  inner.innerHTML=`
+    <div class="wishlist-header">
+      <div><h1>My <span>Wishlist</span></h1><div class="wishlist-count">${wishMovies.length} title${wishMovies.length!==1?'s':''}</div></div>
+      <button class="wishlist-close-btn" onclick="closeWishlist()">← Back</button>
+    </div>
+    <div class="wishlist-grid" id="wishlistGrid"></div>`;
+  const grid=document.getElementById('wishlistGrid');
+  if(wishMovies.length===0){
+    grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;padding:60px 20px">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span>Your wishlist is empty. Browse movies and tap the heart icon to save them here.</span></div>`;
+  }else{
+    wishMovies.forEach(movie=>{
+      const card=document.createElement('div');card.className='wishlist-card';
+      const imgSrc=movie.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');
+      const genres=movie._genres_normalized||normalizeGenres(movie.genres);
+      card.innerHTML=`
+        <button class="wishlist-remove" onclick="event.stopPropagation();toggleWishlist('${movie._id}');openWishlist()" title="Remove">✕</button>
+        ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${movie.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center>${this.alt}</div>'"/>`
+        :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center">${movie.title}</div>`}
+        <div style="padding:10px;background:var(--surface)">
+          <div style="font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${movie.title}</div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:2px">${movie.releaseYear||''}${genres[0]?' · '+genres[0]:''}</div>
+        </div>`;
+      card.addEventListener('click',()=>{closeWishlist();openDetail(movie);});
+      grid.appendChild(card);
+    });
+  }
+  overlay.classList.add('active');document.body.style.overflow='hidden';
+}
+function closeWishlist(){document.getElementById('wishlistOverlay').classList.remove('active');document.body.style.overflow='';}
 
 // ═══ Video Player ═══
 const video=document.getElementById('videoPlayer');const playerUI=document.getElementById('playerUI');
@@ -925,12 +1144,9 @@ function closePlayer(){
 // ═══ Admin Panel ═══
 function openAdmin(){
   closeUserMenu();document.getElementById('adminOverlay').classList.add('active');document.body.style.overflow='hidden';
-  // Always ensure sidebar is visible for admin
   const sidebar=document.getElementById('adminSidebar');
-  if(state.user&&state.user.role==='admin'){
-    sidebar.style.display='';
-    switchAdminTab(state.adminTab||'dashboard');
-  }else{showAdminGate();}
+  if(state.user&&state.user.role==='admin'){sidebar.style.display='';switchAdminTab(state.adminTab||'dashboard');}
+  else{showAdminGate();}
 }
 function closeAdmin(){document.getElementById('adminOverlay').classList.remove('active');document.body.style.overflow='';}
 
@@ -966,11 +1182,10 @@ function switchAdminTab(tab){
   const sidebar=document.getElementById('adminSidebar');
   if(!sidebar)return;
   sidebar.querySelectorAll('.admin-nav-item').forEach(n=>n.classList.toggle('active',n.dataset.adminTab===tab));
-  if(tab==='dashboard'){loadAdminDashboard();return;}
   const main=document.getElementById('adminMain');
-
-  if(tab==='movies'){loadAdminMovies(main);}
-  if(tab==='upload'){showUploadForm(main);}
+  if(tab==='dashboard'){loadAdminDashboard();return;}
+  if(tab==='movies'){loadAdminMovies(main);return;}
+  if(tab==='upload'){state.editingMovieId=null;showUploadForm(main);return;}
 }
 
 async function loadAdminDashboard(){
@@ -994,34 +1209,96 @@ async function loadAdminDashboard(){
   }
 }
 
-async function loadAdminMovies(main){
+async function loadAdminMovies(main,searchQuery=''){
   main.innerHTML='<p style="color:var(--muted)">Loading content…</p>';
   try{
-    const data=await api('/admin/movies');const list=data.movies||[];
-    // Normalize genres for each item
+    const data=await api('/admin/movies');let list=data.movies||[];
     list.forEach(m=>{m._genres_normalized=normalizeGenres(m.genres);});
-    if(list.length===0){
-      main.innerHTML=`<div class="admin-header"><h1>Manage Content</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
-        <p style="color:var(--muted)">No content yet. <button style="color:var(--gold);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline" onclick="switchAdminTab('upload')">Upload your first movie or series</button>.</p>`;
+    state.adminMoviesList=list;
+
+    const filtered=searchQuery?list.filter(m=>m.title&&m.title.toLowerCase().includes(searchQuery.toLowerCase())):list;
+
+    if(filtered.length===0){
+      main.innerHTML=`<div class="admin-header">
+        <div class="admin-header-left">
+          <h1>Manage Content</h1>
+          <div class="admin-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="adminSearchInput" placeholder="Search content…" value="${searchQuery}" oninput="debounceAdminSearch(this.value)"/></div>
+        </div>
+        <div style="display:flex;gap:8px"><button class="btn-submit" style="padding:9px 20px;font-size:.85rem" onclick="switchAdminTab('upload')">+ Add New</button><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+      </div>
+        <p style="color:var(--muted);padding:20px 0">${searchQuery?'No content matches "'+searchQuery+'"':'No content yet.'} ${!searchQuery?'<button style="color:var(--gold);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline" onclick="switchAdminTab(\'upload\')">Upload your first movie or series</button>.':''}</p>`;
       return;
     }
+
     main.innerHTML=`
-      <div class="admin-header"><h1>Manage Content</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+      <div class="admin-header">
+        <div class="admin-header-left">
+          <h1>Manage Content</h1>
+          <div class="admin-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="adminSearchInput" placeholder="Search content…" value="${searchQuery}" oninput="debounceAdminSearch(this.value)"/></div>
+        </div>
+        <div style="display:flex;gap:8px"><button class="btn-submit" style="padding:9px 20px;font-size:.85rem" onclick="switchAdminTab('upload')">+ Add New</button><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+      </div>
+      <div style="color:var(--muted);font-size:.82rem;margin-bottom:14px">${filtered.length} item${filtered.length!==1?'s':''}${searchQuery?' found for "'+searchQuery+'"':''}</div>
       <div class="admin-table-wrap"><table>
-        <thead><tr><th>Title</th><th>Type</th><th>Year</th><th>Genres</th><th>Rating</th><th>Video</th></tr></thead>
-        <tbody>${list.map(m=>`<tr>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${m.title}</td>
-          <td><span style="text-transform:uppercase;font-size:.78rem;padding:2px 8px;border-radius:4px;background:rgba(224,168,48,.15);color:var(--gold)">${m.type}</span></td>
+        <thead><tr><th>Title</th><th>Type</th><th>Year</th><th>Genres</th><th>Rating</th><th>Video</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody>${filtered.map(m=>`<tr>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500">${m.title}</td>
+          <td><span style="text-transform:uppercase;font-size:.75rem;padding:2px 8px;border-radius:4px;background:rgba(224,168,48,.15);color:var(--gold)">${m.type}</span></td>
           <td>${m.releaseYear||'-'}</td>
-          <td style="color:var(--muted);font-size:.82rem">${(m._genres_normalized||[]).join(', ')||'-'}</td>
+          <td style="color:var(--muted);font-size:.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis">${(m._genres_normalized||[]).join(', ')||'-'}</td>
           <td>${m.rating||'-'}</td>
           <td style="color:${m.videoUrl||m.hlsUrl?'var(--green)':'var(--red)'};font-size:.82rem">${m.videoUrl||m.hlsUrl?'✓ Available':'✗ Missing'}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <button class="btn-table-action edit" onclick="editMovie('${m._id}')">✏️ Edit</button>
+            <button class="btn-table-action delete" onclick="confirmDeleteMovie('${m._id}','${m.title.replace(/'/g,"\\'")}')">🗑️ Delete</button>
+          </td>
         </tr>`).join('')}</tbody>
       </table></div>`;
   }catch(e){
     main.innerHTML=`<div class="admin-header"><h1>Manage Content</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
       <div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminMovies(document.getElementById('adminMain'))">Try Again</button></div>`;
   }
+}
+
+let adminSearchTimer=null;
+function debounceAdminSearch(val){clearTimeout(adminSearchTimer);adminSearchTimer=setTimeout(()=>{loadAdminMovies(document.getElementById('adminMain'),val);},250);}
+
+function editMovie(id){
+  const movie=state.adminMoviesList.find(m=>m._id===id);
+  if(!movie){showToast('Movie not found','error');return;}
+  state.editingMovieId=id;
+  const main=document.getElementById('adminMain');
+  // Update sidebar active state
+  document.querySelectorAll('.admin-nav-item').forEach(n=>n.classList.toggle('active',n.dataset.adminTab==='upload'));
+  state.adminTab='upload';
+  showUploadForm(main,movie);
+}
+
+function confirmDeleteMovie(id,title){
+  const main=document.getElementById('adminMain');
+  main.innerHTML=`
+    <div class="admin-header"><h1>Delete Content</h1><button class="admin-close" onclick="loadAdminMovies(document.getElementById('adminMain'),document.getElementById('adminSearchInput')?.value||'')">← Cancel</button></div>
+    <div class="confirm-delete-box">
+      <h3>Are you sure?</h3>
+      <p>You are about to permanently delete:<br/><span class="cd-title">"${title}"</span></p>
+      <p style="font-size:.82rem;color:var(--red)">This action cannot be undone.</p>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel" onclick="loadAdminMovies(document.getElementById('adminMain'),document.getElementById('adminSearchInput')?.value||'')">Cancel</button>
+        <button class="btn-confirm-del" onclick="executeDeleteMovie('${id}')">Yes, Delete</button>
+      </div>
+    </div>`;
+}
+
+async function executeDeleteMovie(id){
+  try{
+    await api('/movies/'+id,{method:'DELETE'});
+    showToast('Content deleted successfully','success');
+    // Also remove from wishlist if present
+    const wishList=getWishlist();
+    const idx=wishList.indexOf(id);
+    if(idx>-1){wishList.splice(idx,1);saveWishlist(wishList);}
+    loadAdminMovies(document.getElementById('adminMain'),'');
+  }catch(e){showToast(e.message,'error');}
 }
 
 function showUploadForm(main){
@@ -1082,10 +1359,9 @@ async function refreshHomeData(){
   const[movies,series,originals]=await Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
   state.movies=movies;state.series=series;state.originals=originals;
   state.allContent=[...movies,...series,...originals];
-  // Clear any active genre filter
   if(state.activeGenreFilter)clearGenreFilter();
   if(movies.length>0)setHero(movies[0]);
-  else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;}
+  else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;document.getElementById('heroWish').disabled=true;}
   populateRow(document.getElementById('trendingRow'),movies,'No movies yet. Content will appear here once added.');
   populateRow(document.getElementById('seriesRow'),series,'No series available yet.');
   populateRow(document.getElementById('originalsRow'),originals,'No originals yet.');
@@ -1100,7 +1376,7 @@ function showToast(msg,type='info'){
   c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},4000);
 }
 
-// ═══ Navigation ═══ 
+// ═══ Navigation ═══
 function navTo(page){
   document.querySelectorAll('.nav-links a').forEach(a=>a.classList.toggle('active',a.dataset.page===page));
   const map={movies:'moviesSection',series:'seriesSection',originals:'originalsSection',genres:'genresSection'};
@@ -1114,17 +1390,17 @@ function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
 window.addEventListener('scroll',()=>{document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>30);},{passive:true});
 document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('open');document.getElementById('navLinks').classList.toggle('open');});
 document.querySelectorAll('#navLinks a').forEach(a=>{a.addEventListener('click',()=>{document.getElementById('hamburger').classList.remove('open');document.getElementById('navLinks').classList.remove('open');});});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAuth();closeDetail();closePlayer();closeAdmin();closeSearch();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAuth();closeDetail();closePlayer();closeAdmin();closeSearch();closeWishlist();}});
 
 // ═══ Init ═══
 async function init(){
   try{await openIDB();}catch(e){console.warn('IDB unavailable:',e);}
-  loadStoredAuth();renderNav();showSkeletons();
+  loadStoredAuth();renderNav();renderFooter();showSkeletons();
   const[movies,series,originals]=await Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
   state.movies=movies;state.series=series;state.originals=originals;
   state.allContent=[...movies,...series,...originals];
   if(movies.length>0){setHero(movies[0]);}
-  else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;}
+  else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;document.getElementById('heroWish').disabled=true;}
   populateRow(document.getElementById('trendingRow'),movies,'No movies yet. Content will appear here once added.');
   populateRow(document.getElementById('seriesRow'),series,'No series available yet.');
   populateRow(document.getElementById('originalsRow'),originals,'No originals yet.');
