@@ -307,30 +307,6 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 .btn-confirm-cancel{background:none;border:1px solid var(--border);color:var(--muted);border-radius:99px;padding:10px 24px;cursor:pointer;font-family:inherit;font-size:.9rem;transition:all var(--transition)}
 .btn-confirm-cancel:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 
-.file-upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:all var(--transition);position:relative;overflow:hidden}
-.file-upload-zone:hover{border-color:var(--gold);background:rgba(224,168,48,.04)}
-.file-upload-zone.dragover{border-color:var(--gold);background:rgba(224,168,48,.08);transform:scale(1.01)}
-.file-upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
-.file-upload-zone .fuz-icon{font-size:2rem;margin-bottom:8px;display:block;opacity:.5}
-.file-upload-zone .fuz-label{font-size:.88rem;color:var(--text);font-weight:500}
-.file-upload-zone .fuz-hint{font-size:.75rem;color:var(--muted);margin-top:4px}
-.file-upload-zone .fuz-preview{margin-top:12px;display:none}
-.file-upload-zone .fuz-preview img{max-height:120px;border-radius:8px;margin:0 auto}
-.file-upload-zone .fuz-preview video{max-height:120px;border-radius:8px;margin:0 auto}
-.file-upload-zone .fuz-filename{font-size:.82rem;color:var(--gold);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px}
-.file-upload-zone .fuz-remove{background:none;border:1px solid var(--border);color:var(--red);padding:2px 10px;border-radius:6px;cursor:pointer;font-size:.75rem;font-family:inherit;transition:all var(--transition)}
-.file-upload-zone .fuz-remove:hover{background:rgba(255,71,87,.1);border-color:rgba(255,71,87,.3)}
-.file-upload-zone.has-file{border-color:var(--green);border-style:solid}
-.file-progress{margin-top:8px;display:none}
-.file-progress-bar{height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
-.file-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;transition:width .2s}
-.file-progress-text{font-size:.72rem;color:var(--muted);margin-top:4px}
-.upload-tabs{display:flex;gap:0;background:rgba(255,255,255,.05);border-radius:10px;padding:4px;margin-bottom:20px}
-.upload-tab{flex:1;padding:9px;border-radius:7px;border:none;background:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;transition:all var(--transition)}
-.upload-tab.active{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.upload-method{display:none}
-.upload-method.active{display:block}
-
 .toast-container{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.88rem;min-width:220px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4);animation:slideInRight .3s ease;display:flex;align-items:center;gap:10px}
 .toast.success{border-left:3px solid var(--green)}
@@ -684,9 +660,7 @@ let state={
   user:null,token:null,heroMovie:null,currentMovie:null,
   playerHls:null,movies:[],series:[],originals:[],allContent:[],
   activeGenreFilter:null,searchTimer:null,adminTab:'dashboard',
-  adminMoviesList:[],editingMovieId:null,
-  uploadMethod:'url',
-  uploadedFiles:{poster:null,backdrop:null,video:null}
+  adminMoviesList:[],editingMovieId:null
 };
 
 const GENRES=[
@@ -723,34 +697,6 @@ async function api(path,opts={}){
   return data;
 }
 
-// ═══ File Upload to Cloudinary ═══
-function getCloudinaryConfig(){
-  const stored=localStorage.getItem('skflip_cloudinary');
-  if(stored)try{return JSON.parse(stored);}catch(e){}
-  return{cloudName:'',uploadPreset:''};
-}
-function saveCloudinaryConfig(cfg){localStorage.setItem('skflip_cloudinary',JSON.stringify(cfg));}
-
-async function uploadFileToCloudinary(file,resourceType){
-  const cfg=getCloudinaryConfig();
-  if(!cfg.cloudName||!cfg.uploadPreset){throw new Error('Cloudinary not configured. Go to Upload Content → File Upload tab and set your Cloudinary details first.');}
-  const formData=new FormData();
-  formData.append('file',file);
-  formData.append('upload_preset',cfg.uploadPreset);
-  if(resourceType==='video')formData.append('resource_type','video');
-  const res=await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/${resourceType==='video'?'video':'image'}/upload`,{method:'POST',body:formData});
-  const data=await res.json();
-  if(!res.ok)throw new Error(data.error?.message||'Upload failed');
-  return{url:data.secure_url,publicId:data.public_id};
-}
-
-function formatFileSize(bytes){
-  if(bytes===0)return'0 B';
-  const k=1024;const sizes=['B','KB','MB','GB'];
-  const i=Math.floor(Math.log(bytes)/Math.log(k));
-  return parseFloat((bytes/Math.pow(k,i)).toFixed(1))+' '+sizes[i];
-}
-
 // ═══ Wishlist ═══
 function getWishlist(){try{return JSON.parse(localStorage.getItem('skflip_wishlist')||'[]');}catch(e){return[];}}
 function saveWishlist(list){localStorage.setItem('skflip_wishlist',JSON.stringify(list));}
@@ -764,6 +710,7 @@ function toggleWishlist(movieId){
   updateAllWishlistUI();
 }
 function updateAllWishlistUI(){
+  // Update hero wishlist button
   if(state.heroMovie){
     const inW=isInWishlist(state.heroMovie._id);
     const btn=document.getElementById('heroWish');
@@ -772,6 +719,7 @@ function updateAllWishlistUI(){
     if(inW){btn.classList.add('wishlisted');icon.setAttribute('fill','currentColor');txt.textContent='Wishlisted';}
     else{btn.classList.remove('wishlisted');icon.setAttribute('fill','none');txt.textContent='Wishlist';}
   }
+  // Update detail modal if open
   if(state.currentMovie){
     const inW=isInWishlist(state.currentMovie._id);
     const btn=document.getElementById('modalWishBtn');
@@ -780,6 +728,7 @@ function updateAllWishlistUI(){
       else{btn.classList.remove('wishlisted');btn.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlist`;}
     }
   }
+  // Update all card wish buttons
   document.querySelectorAll('.card-wish-btn').forEach(btn=>{
     const id=btn.dataset.movieId;
     if(id){
@@ -889,7 +838,7 @@ function createCard(item){
     ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${item.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);padding:8px;text-align:center>${this.alt}</div>'"/>`
     :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);padding:8px;text-align:center">${item.title}</div>`}
     <div class="card-overlay">
-      <div class="card-play-btn" onclick="event.stopPropagation();openPlayer(state.allContent.find(m=>m._id==='${item._id}'))"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="card-play-btn" onclick="event.stopPropagation();openPlayer(state.allContent.find(m=>m._id==='${item._id}'))||openPlayer(${JSON.stringify(item).replace(/"/g,'&quot;')})"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
       <div class="card-title">${item.title}</div>
       <div class="card-year">${item.releaseYear||''}${genreTag?' · '+genreTag:''}</div>
     </div>`;
@@ -1046,12 +995,14 @@ function openWishlist(){
   const inner=document.getElementById('wishlistInner');
   const wishIds=getWishlist();
   const wishMovies=wishIds.map(id=>state.allContent.find(m=>m._id===id)).filter(Boolean);
+
   inner.innerHTML=`
     <div class="wishlist-header">
       <div><h1>My <span>Wishlist</span></h1><div class="wishlist-count">${wishMovies.length} title${wishMovies.length!==1?'s':''}</div></div>
       <button class="wishlist-close-btn" onclick="closeWishlist()">← Back</button>
     </div>
     <div class="wishlist-grid" id="wishlistGrid"></div>`;
+
   const grid=document.getElementById('wishlistGrid');
   if(wishMovies.length===0){
     grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;padding:60px 20px">
@@ -1074,6 +1025,7 @@ function openWishlist(){
       grid.appendChild(card);
     });
   }
+
   overlay.classList.add('active');document.body.style.overflow='hidden';
 }
 function closeWishlist(){document.getElementById('wishlistOverlay').classList.remove('active');document.body.style.overflow='';}
@@ -1301,34 +1253,38 @@ async function executeDeleteMovie(id){
   }catch(e){showToast(e.message,'error');}
 }
 
-function showUploadForm(main){
+function showUploadForm(main,movie){
+  const isEdit=!!movie;
+  state.editingMovieId=isEdit?movie._id:null;
+  const genresStr=(movie._genres_normalized||normalizeGenres(movie.genres)||[]).join(', ');
   main.innerHTML=`
-    <div class="admin-header"><h1>Upload Content</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+    <div class="admin-header"><h1>${isEdit?'Edit Content':'Upload Content'}</h1><button class="admin-close" onclick="${isEdit?`switchAdminTab('movies')`:`closeAdmin()`}">← ${isEdit?'Back to List':'Back to Site'}</button></div>
     <div class="upload-panel">
-      <div class="form-group"><label class="form-label">Title *</label><input class="admin-input" id="up_title" placeholder="Movie or series title"/></div>
+      <div class="form-group"><label class="form-label">Title *</label><input class="admin-input" id="up_title" placeholder="Movie or series title" value="${isEdit?(movie.title||''):''}"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label class="form-label">Type</label><select class="admin-input" id="up_type"><option value="movie">Movie</option><option value="series">Series</option><option value="original">Original</option></select></div>
-        <div class="form-group"><label class="form-label">Release Year</label><input class="admin-input" id="up_year" type="number" placeholder="2025"/></div>
+        <div class="form-group"><label class="form-label">Type</label><select class="admin-input" id="up_type"><option value="movie" ${isEdit&&movie.type==='movie'?'selected':''}>Movie</option><option value="series" ${isEdit&&movie.type==='series'?'selected':''}>Series</option><option value="original" ${isEdit&&movie.type==='original'?'selected':''}>Original</option></select></div>
+        <div class="form-group"><label class="form-label">Release Year</label><input class="admin-input" id="up_year" type="number" placeholder="2025" value="${isEdit&&(movie.releaseYear||movie.releaseYear===0)?movie.releaseYear:''}"/></div>
       </div>
-      <div class="form-group"><label class="form-label">Genres (comma separated)</label><input class="admin-input" id="up_genres" placeholder="Action, Sci-Fi, Drama"/></div>
+      <div class="form-group"><label class="form-label">Genres (comma separated)</label><input class="admin-input" id="up_genres" placeholder="Action, Sci-Fi, Drama" value="${isEdit?genresStr:''}"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label class="form-label">Rating</label><input class="admin-input" id="up_rating" placeholder="e.g. 8.5"/></div>
-        <div class="form-group"><label class="form-label">Duration (minutes)</label><input class="admin-input" id="up_duration" type="number" placeholder="120"/></div>
+        <div class="form-group"><label class="form-label">Rating</label><input class="admin-input" id="up_rating" placeholder="e.g. 8.5" value="${isEdit&&movie.rating?movie.rating:''}"/></div>
+        <div class="form-group"><label class="form-label">Duration (minutes)</label><input class="admin-input" id="up_duration" type="number" placeholder="120" value="${isEdit&&movie.duration?movie.duration:''}"/></div>
       </div>
-      <div class="form-group"><label class="form-label">Poster Image URL</label><input class="admin-input" id="up_poster" placeholder="https://example.com/poster.jpg"/></div>
-      <div class="form-group"><label class="form-label">Backdrop Image URL</label><input class="admin-input" id="up_backdrop" placeholder="https://example.com/backdrop.jpg"/></div>
-      <div class="form-group"><label class="form-label">Video URL (MP4 direct link)</label><input class="admin-input" id="up_video" placeholder="https://example.com/video.mp4"/></div>
-      <div class="form-group"><label class="form-label">HLS Stream URL (.m3u8) — optional</label><input class="admin-input" id="up_hls" placeholder="https://example.com/stream.m3u8"/></div>
-      <div class="form-group"><label class="form-label">Description</label><textarea class="admin-input" id="up_desc" placeholder="Write a description…" rows="4" style="resize:vertical"></textarea></div>
+      <div class="form-group"><label class="form-label">Poster Image URL</label><input class="admin-input" id="up_poster" placeholder="https://example.com/poster.jpg" value="${isEdit?(movie.posterUrl||''):''}"/></div>
+      <div class="form-group"><label class="form-label">Backdrop Image URL</label><input class="admin-input" id="up_backdrop" placeholder="https://example.com/backdrop.jpg" value="${isEdit?(movie.backdropUrl||''):''}"/></div>
+      <div class="form-group"><label class="form-label">Video URL (MP4 direct link)</label><input class="admin-input" id="up_video" placeholder="https://example.com/video.mp4" value="${isEdit?(movie.videoUrl||''):''}"/></div>
+      <div class="form-group"><label class="form-label">HLS Stream URL (.m3u8) — optional</label><input class="admin-input" id="up_hls" placeholder="https://example.com/stream.m3u8" value="${isEdit?(movie.hlsUrl||''):''}"/></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="admin-input" id="up_desc" placeholder="Write a description…" rows="4" style="resize:vertical">${isEdit?(movie.description||''):''}</textarea></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn-submit" id="btnSubmitMovie" onclick="submitMovie()">Save Content</button>
+        <button class="btn-submit" id="btnSubmitMovie" onclick="submitMovie()">${isEdit?'Update Content':'Save Content'}</button>
+        ${isEdit?`<button class="btn-gate-cancel" style="width:auto;margin-top:0" onclick="switchAdminTab('movies')">Cancel</button>`:''}
       </div>
     </div>`;
 }
 
 async function submitMovie(){
   const btn=document.getElementById('btnSubmitMovie');
-  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  if(btn){btn.disabled=true;btn.textContent=state.editingMovieId?'Updating…':'Saving…';}
   const genresRaw=document.getElementById('up_genres')?.value||'';
   const payload={
     title:document.getElementById('up_title').value.trim(),
@@ -1343,16 +1299,22 @@ async function submitMovie(){
     hlsUrl:document.getElementById('up_hls').value.trim(),
     description:document.getElementById('up_desc').value.trim()
   };
-  if(!payload.title){showToast('Title is required.','error');if(btn){btn.disabled=false;btn.textContent='Save Content';}return;}
+  if(!payload.title){showToast('Title is required.','error');if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';}return;}
   try{
-    await api('/movies',{method:'POST',body:JSON.stringify(payload)});
-    showToast('"'+payload.title+'" saved successfully!','success');
-    // Close admin, refresh home data, scroll to top so user sees new content
-    closeAdmin();
-    await refreshHomeData();
-    window.scrollTo({top:0,behavior:'smooth'});
-    showToast('Your new content is now live on the platform!','success');
-  }catch(e){showToast(e.message,'error');if(btn){btn.disabled=false;btn.textContent='Save Content';}}
+    if(state.editingMovieId){
+      await api('/movies/'+state.editingMovieId,{method:'PUT',body:JSON.stringify(payload)});
+      showToast('"'+payload.title+'" updated successfully!','success');
+      state.editingMovieId=null;
+      switchAdminTab('movies');
+    }else{
+      await api('/movies',{method:'POST',body:JSON.stringify(payload)});
+      showToast('"'+payload.title+'" saved successfully!','success');
+      closeAdmin();
+      await refreshHomeData();
+      window.scrollTo({top:0,behavior:'smooth'});
+      showToast('Your new content is now live on the platform!','success');
+    }
+  }catch(e){showToast(e.message,'error');if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';}}
 }
 
 async function refreshHomeData(){
