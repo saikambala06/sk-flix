@@ -93,6 +93,23 @@ img{display:block;max-width:100%}
 .btn-info:hover{background:rgba(255,255,255,.18);transform:translateY(-2px)}
 .btn-info:disabled{opacity:.3;cursor:not-allowed;transform:none}
 
+/* ═══ Hero Slider ═══ */
+.hero-slide-dots{position:absolute;bottom:28px;left:clamp(16px,5vw,80px);z-index:10;display:flex;align-items:center;gap:8px}
+.hero-dot{width:8px;height:8px;border-radius:99px;background:rgba(255,255,255,0.3);border:none;cursor:pointer;padding:0;transition:all 0.35s cubic-bezier(0.4,0,0.2,1)}
+.hero-dot.active{width:28px;background:var(--gold)}
+.hero-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);backdrop-filter:blur(8px);color:var(--text);width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition);opacity:0.6}
+.hero-arrow:hover{opacity:1;background:rgba(0,0,0,0.75);border-color:rgba(255,255,255,0.3);transform:translateY(-50%) scale(1.08)}
+.hero-arrow-prev{left:clamp(10px,2vw,28px)}
+.hero-arrow-next{right:clamp(10px,2vw,28px)}
+.hero-bg-img{transition:opacity 0.6s ease, transform 0.6s ease}
+.hero-content{transition:opacity 0.45s ease, transform 0.45s ease}
+.hero-content.slide-out{opacity:0;transform:translateX(-24px)}
+.hero-content.slide-in{animation:heroSlideIn 0.55s cubic-bezier(0.4,0,0.2,1) both}
+@keyframes heroSlideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+.hero-progress{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.07);z-index:10}
+.hero-progress-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));width:0%;transition:none;border-radius:0 2px 2px 0}
+@media(max-width:600px){.hero-arrow{width:38px;height:38px}.hero-arrow-prev{left:8px}.hero-arrow-next{right:8px}}
+
 .row-section{padding:36px clamp(16px,4vw,60px) 0; width:100%; max-width:100vw}
 .row-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
 .row-header h2{font-family:'Playfair Display',serif;font-size:clamp(1.2rem,3vw,1.6rem);font-weight:700}
@@ -515,6 +532,14 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
       <img class="hero-bg-img hidden-img" id="heroBgImg" src="" alt="" />
       <div class="hero-gradient"></div>
     </div>
+    <button class="hero-arrow hero-arrow-prev" id="heroPrev" aria-label="Previous" onclick="heroSliderPrev()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="hero-arrow hero-arrow-next" id="heroNext" aria-label="Next" onclick="heroSliderNext()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="hero-slide-dots" id="heroSliderDots"></div>
+    <div class="hero-progress"><div class="hero-progress-bar" id="heroProgressBar"></div></div>
     <div class="hero-content" id="heroContent">
       <div class="hero-badge">STREAMING PLATFORM</div>
       <h1 class="hero-title" id="heroTitle"><span>SKFLIP</span></h1>
@@ -919,6 +944,134 @@ function createCard(item){
 }
 
 function populateRow(rowEl,items,emptyMsg){rowEl.innerHTML='';if(!items||items.length===0){rowEl.innerHTML=emptyState(emptyMsg);}else{items.forEach(m=>rowEl.appendChild(createCard(m)));}}
+
+// ═══ Hero Slider ═══
+const SLIDER_INTERVAL = 6000;
+let sliderItems = [];
+let sliderIndex = 0;
+let sliderTimer = null;
+let sliderProgressTimer = null;
+let sliderProgressStart = null;
+
+function buildSliderItems(movies, series, originals) {
+  const all = [...movies, ...series, ...originals].filter(m => m.backdropUrl && m.backdropUrl.startsWith('http'));
+  // shuffle
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  return all.slice(0, Math.min(8, all.length));
+}
+
+function renderSliderDots() {
+  const dots = document.getElementById('heroSliderDots');
+  if (!dots) return;
+  dots.innerHTML = '';
+  sliderItems.forEach((_, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'hero-dot' + (i === sliderIndex ? ' active' : '');
+    btn.setAttribute('aria-label', 'Slide ' + (i + 1));
+    btn.addEventListener('click', () => heroSliderGoTo(i));
+    dots.appendChild(btn);
+  });
+}
+
+function startSliderProgress() {
+  const bar = document.getElementById('heroProgressBar');
+  if (!bar) return;
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bar.style.transition = `width ${SLIDER_INTERVAL}ms linear`;
+      bar.style.width = '100%';
+    });
+  });
+}
+
+function stopSliderAuto() {
+  clearInterval(sliderTimer);
+  sliderTimer = null;
+}
+
+function startSliderAuto() {
+  stopSliderAuto();
+  if (sliderItems.length <= 1) return;
+  startSliderProgress();
+  sliderTimer = setInterval(() => {
+    sliderIndex = (sliderIndex + 1) % sliderItems.length;
+    applyHeroSlide();
+    startSliderProgress();
+  }, SLIDER_INTERVAL);
+}
+
+function applyHeroSlide(animate = true) {
+  if (!sliderItems.length) return;
+  const movie = sliderItems[sliderIndex];
+  const content = document.getElementById('heroContent');
+  if (animate && content) {
+    content.classList.add('slide-out');
+    setTimeout(() => {
+      setHero(movie);
+      content.classList.remove('slide-out');
+      content.classList.remove('slide-in');
+      void content.offsetWidth;
+      content.classList.add('slide-in');
+    }, 220);
+  } else {
+    setHero(movie);
+  }
+  renderSliderDots();
+}
+
+function heroSliderGoTo(idx) {
+  if (idx === sliderIndex) return;
+  sliderIndex = idx;
+  applyHeroSlide();
+  startSliderAuto();
+}
+function heroSliderPrev() {
+  sliderIndex = (sliderIndex - 1 + sliderItems.length) % sliderItems.length;
+  applyHeroSlide();
+  startSliderAuto();
+}
+function heroSliderNext() {
+  sliderIndex = (sliderIndex + 1) % sliderItems.length;
+  applyHeroSlide();
+  startSliderAuto();
+}
+
+// Touch swipe support
+(function() {
+  let touchStartX = 0, touchStartY = 0;
+  const heroEl = document.getElementById('heroSection');
+  if (!heroEl) return;
+  heroEl.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  heroEl.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) heroSliderNext();
+      else heroSliderPrev();
+    }
+  }, { passive: true });
+})();
+
+// Pause on hover/focus
+document.getElementById('heroSection')?.addEventListener('mouseenter', () => stopSliderAuto());
+document.getElementById('heroSection')?.addEventListener('mouseleave', () => startSliderAuto());
+
+function initHeroSlider(movies, series, originals) {
+  sliderItems = buildSliderItems(movies, series, originals);
+  if (sliderItems.length === 0) return false; // no items with backdrops
+  sliderIndex = 0;
+  applyHeroSlide(false);
+  startSliderAuto();
+  return true;
+}
 
 function setHero(movie){
   state.heroMovie=movie;if(!movie)return;
@@ -1448,8 +1601,11 @@ async function refreshHomeData(){
   state.movies=movies;state.series=series;state.originals=originals;
   state.allContent=[...movies,...series,...originals];
   if(state.activeGenreFilter)clearGenreFilter();
-  if(movies.length>0)setHero(movies[0]);
-  else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;document.getElementById('heroWish').disabled=true;}
+  const hasSlider=initHeroSlider(movies,series,originals);
+  if(!hasSlider){
+    if(movies.length>0)setHero(movies[0]);
+    else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;document.getElementById('heroWish').disabled=true;}
+  }
   populateRow(document.getElementById('trendingRow'),movies,'No movies yet. Content will appear here once added.');
   populateRow(document.getElementById('seriesRow'),series,'No series available yet.');
   populateRow(document.getElementById('originalsRow'),originals,'No originals yet.');
@@ -1487,8 +1643,11 @@ async function init(){
   const[movies,series,originals]=await Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
   state.movies=movies;state.series=series;state.originals=originals;
   state.allContent=[...movies,...series,...originals];
-  if(movies.length>0){setHero(movies[0]);}
-  else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;document.getElementById('heroWish').disabled=true;}
+  const hasSlider=initHeroSlider(movies,series,originals);
+  if(!hasSlider){
+    if(movies.length>0){setHero(movies[0]);}
+    else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;document.getElementById('heroWish').disabled=true;}
+  }
   populateRow(document.getElementById('trendingRow'),movies,'No movies yet. Content will appear here once added.');
   populateRow(document.getElementById('seriesRow'),series,'No series available yet.');
   populateRow(document.getElementById('originalsRow'),originals,'No originals yet.');
