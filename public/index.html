@@ -384,6 +384,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   .search-input{font-size:1.1rem;padding:14px 50px 14px 18px}
   .genre-grid{grid-template-columns:repeat(2,1fr)}
   .wishlist-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+  .hero-title, .promo-text h2 { line-height: 1.1; }
 
   /* Admin Mobile Fixes */
   .admin-layout{flex-direction:column}
@@ -410,9 +411,10 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   .admin-search{width:100%; max-width:none;}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
 }
+
 @media(max-width:480px){
-  .hero-btns{flex-direction:column}
-  .btn-play,.btn-info,.btn-wishlist{justify-content:center;width:100%}
+  .hero-btns{flex-direction:column; gap:12px;}
+  .btn-play,.btn-info,.btn-wishlist{justify-content:center; width:100%; padding:12px 20px;}
   .toast-container{left:16px;right:16px;bottom:16px}
   .toast{min-width:auto;max-width:none}
   .admin-header h1{font-size:1.4rem}
@@ -429,6 +431,15 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   /* Form responsiveness */
   .upload-panel{padding:20px}
   .upload-panel > div[style*="display:grid"]{grid-template-columns:1fr !important}
+
+  /* Hero Section Mobile Over-Merging Fixes */
+  .hero { min-height: auto; padding-top: calc(var(--nav-h) + 50px); padding-bottom: 60px; align-items: flex-start; overflow: visible; }
+  .hero-content { margin-top: 15px; width: 100%; }
+  .hero-title { line-height: 1.15; font-size: clamp(2rem, 11vw, 3rem); margin-bottom: 12px; padding-bottom: 4px; }
+  .hero-desc { font-size: 0.92rem; line-height: 1.5; margin-bottom: 24px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .hero-badge { margin-bottom: 14px; }
+  .promo-text h2 { line-height: 1.1; }
+  .row-section { padding: 30px 16px 0; }
 }
 </style>
 </head>
@@ -891,7 +902,7 @@ function setHero(movie){
   if(hasBg){bgImg.src=movie.backdropUrl;bgImg.classList.remove('hidden-img');}else{bgImg.classList.add('hidden-img');}
   document.getElementById('heroTitle').innerHTML=`<span>${movie.title}</span>`;
   document.getElementById('heroEmptySub').style.display='none';
-  const desc=document.getElementById('heroDesc');if(movie.description){desc.textContent=movie.description;desc.style.display='block';}else{desc.style.display='none';}
+  const desc=document.getElementById('heroDesc');if(movie.description){desc.textContent=movie.description;desc.style.display='-webkit-box';}else{desc.style.display='none';}
   const meta=document.getElementById('heroMeta');let metaHtml='';
   if(movie.rating)metaHtml+=`<span class="rating">⭐ ${movie.rating}</span>`;
   if(movie.releaseYear)metaHtml+=`<span class="dot">•</span><span>${movie.releaseYear}</span>`;
@@ -1105,6 +1116,16 @@ document.addEventListener('keydown',e=>{
 video.addEventListener('dblclick',e=>{e.preventDefault();fullscreenBtn.click();});
 
 function openPlayer(movie){
+  // Authentication Guard Added Here
+  if(!state.user){
+    if(document.getElementById('detailOverlay').classList.contains('active')) {
+      closeDetail();
+    }
+    showToast('Please sign in or create an account to start watching.', 'info');
+    openAuth('signup');
+    return;
+  }
+
   const src=movie.hlsUrl||movie.videoUrl;if(!src){showToast('No video URL available for this content.','error');return;}
   document.getElementById('playerTitle').textContent=movie.title;progressBar.style.width='0%';
   document.getElementById('currentTimeDisplay').textContent='0:00';document.getElementById('durationDisplay').textContent='0:00';
