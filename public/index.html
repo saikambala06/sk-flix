@@ -41,7 +41,7 @@ img{display:block;max-width:100%}
 .btn-signup:hover{background:var(--gold2);transform:translateY(-1px)}
 .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#ff6b35);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:#000;cursor:pointer;border:2px solid transparent;transition:border-color var(--transition)}
 .user-avatar:hover{border-color:var(--gold)}
-.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;z-index:1002}
 .hamburger span{display:block;width:24px;height:2px;background:var(--text);border-radius:99px;transition:var(--transition)}
 .hamburger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
 .hamburger.open span:nth-child(2){opacity:0}
@@ -69,7 +69,7 @@ img{display:block;max-width:100%}
 .hero-gradient{position:absolute;inset:0;background:linear-gradient(to right,rgba(8,8,16,.97) 45%,rgba(8,8,16,.2) 100%),linear-gradient(to top,rgba(8,8,16,.9) 0%,transparent 40%)}
 .hero-content{position:relative;z-index:2;max-width:600px;animation:fadeUp .9s ease both}
 .hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(224,168,48,.15);border:1px solid rgba(224,168,48,.4);color:var(--gold);padding:5px 14px;border-radius:99px;font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.2rem}
-.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,9vw,9rem);line-height:.95;letter-spacing:2px;margin-bottom:1rem}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,8vw,8rem);line-height:.95;letter-spacing:2px;margin-bottom:1rem}
 .hero-title span{background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 50%,#ff9f1c 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1.2rem}
 .hero-meta span{font-size:.88rem;color:var(--muted)}
@@ -128,10 +128,10 @@ img{display:block;max-width:100%}
 
 .genres-section{padding:48px clamp(16px,4vw,60px)}
 .section-title{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,4vw,2.2rem);font-weight:700;margin-bottom:28px}
-.genre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.genre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 .genre-card{border-radius:var(--radius);height:100px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;transition:transform var(--transition),box-shadow var(--transition)}
 .genre-card:hover{transform:scale(1.04);box-shadow:0 20px 50px rgba(0,0,0,.5)}
-.genre-card span{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;z-index:1;position:relative;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.genre-card span{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;z-index:1;position:relative;text-shadow:0 2px 10px rgba(0,0,0,.5);text-align:center}
 .genre-card::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,0);transition:background var(--transition)}
 .genre-card:hover::before{background:rgba(0,0,0,.15)}
 .genre-card .genre-count{position:absolute;bottom:8px;right:12px;font-family:'DM Sans',sans-serif;font-size:.7rem;color:rgba(255,255,255,.5);font-weight:500;z-index:1;letter-spacing:0}
@@ -248,14 +248,17 @@ img{display:block;max-width:100%}
 
 .admin-overlay{position:fixed;inset:0;z-index:2500;background:var(--bg);overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .3s}
 .admin-overlay.active{opacity:1;pointer-events:all}
-.admin-layout{display:flex;min-height:100vh}
-.admin-sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
-.admin-logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;padding:0 24px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.admin-layout{display:flex;min-height:100vh;position:relative}
+
+/* Desktop Admin Sidebar */
+.admin-sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;transition:transform 0.3s ease; z-index:2600;}
+
+.admin-logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;padding:0 24px 24px;border-bottom:1px solid var(--border);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
 .admin-logo span{color:var(--gold)}
 .admin-nav-item{display:flex;align-items:center;gap:10px;padding:11px 24px;color:var(--muted);cursor:pointer;transition:all var(--transition);font-size:.9rem;border-left:3px solid transparent;background:none;border-top:none;border-bottom:none;border-right:none;width:100%;text-align:left;font-family:inherit}
 .admin-nav-item:hover{color:var(--text);background:rgba(255,255,255,.04)}
 .admin-nav-item.active{color:var(--gold);background:rgba(224,168,48,.07);border-left-color:var(--gold)}
-.admin-main{flex:1;padding:32px;overflow-y:auto}
+.admin-main{flex:1;padding:32px;overflow-y:auto;width:100%}
 .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
 .admin-header-left{display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:1}
 .admin-header-left h1{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;white-space:nowrap}
@@ -307,29 +310,8 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 .btn-confirm-cancel{background:none;border:1px solid var(--border);color:var(--muted);border-radius:99px;padding:10px 24px;cursor:pointer;font-family:inherit;font-size:.9rem;transition:all var(--transition)}
 .btn-confirm-cancel:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 
-.file-upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:all var(--transition);position:relative;overflow:hidden}
-.file-upload-zone:hover{border-color:var(--gold);background:rgba(224,168,48,.04)}
-.file-upload-zone.dragover{border-color:var(--gold);background:rgba(224,168,48,.08);transform:scale(1.01)}
-.file-upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
-.file-upload-zone .fuz-icon{font-size:2rem;margin-bottom:8px;display:block;opacity:.5}
-.file-upload-zone .fuz-label{font-size:.88rem;color:var(--text);font-weight:500}
-.file-upload-zone .fuz-hint{font-size:.75rem;color:var(--muted);margin-top:4px}
-.file-upload-zone .fuz-preview{margin-top:12px;display:none}
-.file-upload-zone .fuz-preview img{max-height:120px;border-radius:8px;margin:0 auto}
-.file-upload-zone .fuz-preview video{max-height:120px;border-radius:8px;margin:0 auto}
-.file-upload-zone .fuz-filename{font-size:.82rem;color:var(--gold);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px}
-.file-upload-zone .fuz-remove{background:none;border:1px solid var(--border);color:var(--red);padding:2px 10px;border-radius:6px;cursor:pointer;font-size:.75rem;font-family:inherit;transition:all var(--transition)}
-.file-upload-zone .fuz-remove:hover{background:rgba(255,71,87,.1);border-color:rgba(255,71,87,.3)}
-.file-upload-zone.has-file{border-color:var(--green);border-style:solid}
-.file-progress{margin-top:8px;display:none}
-.file-progress-bar{height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
-.file-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;transition:width .2s}
-.file-progress-text{font-size:.72rem;color:var(--muted);margin-top:4px}
-.upload-tabs{display:flex;gap:0;background:rgba(255,255,255,.05);border-radius:10px;padding:4px;margin-bottom:20px}
-.upload-tab{flex:1;padding:9px;border-radius:7px;border:none;background:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;transition:all var(--transition)}
-.upload-tab.active{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.upload-method{display:none}
-.upload-method.active{display:block}
+.admin-menu-toggle{display:none;background:none;border:none;color:var(--text);cursor:pointer;padding:8px;transition:color .2s}
+.admin-menu-toggle:hover{color:var(--gold)}
 
 .toast-container{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.88rem;min-width:220px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4);animation:slideInRight .3s ease;display:flex;align-items:center;gap:10px}
@@ -378,18 +360,14 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 @media(max-width:900px){.hero-gradient{background:linear-gradient(to right,rgba(8,8,16,.97) 0%,rgba(8,8,16,.7) 100%)}}
 @media(max-width:768px){
   :root{--nav-h:60px}
-  .nav-links{position:fixed;top:0;right:0;bottom:0;width:270px;background:rgba(13,13,26,.98);backdrop-filter:blur(20px);border-left:1px solid var(--border);flex-direction:column;justify-content:center;align-items:flex-start;padding:40px 28px;gap:24px;transform:translateX(100%);transition:transform var(--transition)}
+  /* Main Nav Mobile */
+  .nav-links{position:fixed;top:0;right:0;bottom:0;width:270px;background:rgba(13,13,26,.98);backdrop-filter:blur(20px);border-left:1px solid var(--border);flex-direction:column;justify-content:center;align-items:flex-start;padding:40px 28px;gap:24px;transform:translateX(100%);transition:transform var(--transition);z-index:1001}
   .nav-links.open{transform:translateX(0)}
   .hamburger{display:flex}
   .btn-signup.desktop-only{display:none}
   .promo-inner{flex-direction:column}
   .device-stack{display:none}
   .footer-inner{flex-direction:column;gap:36px}
-  .admin-layout{flex-direction:column}
-  .admin-sidebar{width:100%;height:auto;position:static;display:flex;overflow-x:auto;padding:16px 0;gap:0}
-  .admin-sidebar .admin-logo{border-bottom:none;border-right:1px solid var(--border);padding:0 20px;margin-bottom:0;margin-right:16px;white-space:nowrap;display:flex;align-items:center}
-  .admin-nav-item{padding:10px 16px;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
-  .admin-nav-item.active{border-left-color:transparent;border-bottom-color:var(--gold)}
   .modal-hero{height:200px}
   .detail-close{width:42px;height:42px;font-size:1.2rem;top:8px;right:8px}
   .player-ui{padding:16px}
@@ -401,6 +379,38 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   .genre-grid{grid-template-columns:repeat(2,1fr)}
   .features-grid{grid-template-columns:1fr}
   .wishlist-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+
+  /* Admin Mobile Fixes */
+  .admin-layout{flex-direction:column}
+  
+  /* Sidebar becomes off-canvas drawer */
+  .admin-sidebar{ 
+    position:fixed; 
+    top:0; 
+    left:0; 
+    bottom:0; 
+    width:260px; 
+    transform:translateX(-100%); 
+    z-index:2700; 
+    box-shadow: 10px 0 30px rgba(0,0,0,.5);
+    height:100vh;
+  }
+  
+  .admin-sidebar.mobile-open{transform:translateX(0)}
+  
+  /* Admin Main takes full width */
+  .admin-main{margin-left:0; padding:20px;}
+  
+  /* Show hamburger in admin header */
+  .admin-menu-toggle{display:block;}
+  
+  /* Admin Header adjustments */
+  .admin-header{flex-direction:column; align-items:flex-start; gap:15px;}
+  .admin-header-left{width:100%; align-items:center; justify-content:space-between;}
+  .admin-search{width:100%; max-width:none;}
+  
+  /* Stats Grid mobile */
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:480px){
   .hero-title{font-size:3.5rem}
@@ -414,6 +424,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   .search-results-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
   .wishlist-grid{grid-template-columns:repeat(2,1fr)}
   th,td{padding:10px 12px;font-size:.8rem}
+  .card-row{padding-left:16px; padding-right:16px; gap:10px}
 }
 </style>
 </head>
@@ -664,7 +675,9 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 <div class="admin-overlay" id="adminOverlay">
   <div class="admin-layout">
     <aside class="admin-sidebar" id="adminSidebar">
-      <div class="admin-logo">SK<span>FLIP</span></div>
+      <div class="admin-logo">
+        <span>SK<span>FLIP</span></span>
+      </div>
       <button class="admin-nav-item active" data-admin-tab="dashboard" onclick="switchAdminTab('dashboard')">Dashboard</button>
       <button class="admin-nav-item" data-admin-tab="movies" onclick="switchAdminTab('movies')">Manage Content</button>
       <button class="admin-nav-item" data-admin-tab="upload" onclick="switchAdminTab('upload')">Upload Content</button>
@@ -685,7 +698,6 @@ let state={
   playerHls:null,movies:[],series:[],originals:[],allContent:[],
   activeGenreFilter:null,searchTimer:null,adminTab:'dashboard',
   adminMoviesList:[],editingMovieId:null,
-  uploadMethod:'url',
   uploadedFiles:{poster:null,backdrop:null,video:null}
 };
 
@@ -721,34 +733,6 @@ async function api(path,opts={}){
   const data=await res.json();
   if(!res.ok)throw new Error(data.error||'Request failed');
   return data;
-}
-
-// ═══ File Upload to Cloudinary ═══
-function getCloudinaryConfig(){
-  const stored=localStorage.getItem('skflip_cloudinary');
-  if(stored)try{return JSON.parse(stored);}catch(e){}
-  return{cloudName:'',uploadPreset:''};
-}
-function saveCloudinaryConfig(cfg){localStorage.setItem('skflip_cloudinary',JSON.stringify(cfg));}
-
-async function uploadFileToCloudinary(file,resourceType){
-  const cfg=getCloudinaryConfig();
-  if(!cfg.cloudName||!cfg.uploadPreset){throw new Error('Cloudinary not configured. Go to Upload Content → File Upload tab and set your Cloudinary details first.');}
-  const formData=new FormData();
-  formData.append('file',file);
-  formData.append('upload_preset',cfg.uploadPreset);
-  if(resourceType==='video')formData.append('resource_type','video');
-  const res=await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/${resourceType==='video'?'video':'image'}/upload`,{method:'POST',body:formData});
-  const data=await res.json();
-  if(!res.ok)throw new Error(data.error?.message||'Upload failed');
-  return{url:data.secure_url,publicId:data.public_id};
-}
-
-function formatFileSize(bytes){
-  if(bytes===0)return'0 B';
-  const k=1024;const sizes=['B','KB','MB','GB'];
-  const i=Math.floor(Math.log(bytes)/Math.log(k));
-  return parseFloat((bytes/Math.pow(k,i)).toFixed(1))+' '+sizes[i];
 }
 
 // ═══ Wishlist ═══
@@ -1142,9 +1126,18 @@ function closePlayer(){
 }
 
 // ═══ Admin Panel ═══
+// Mobile sidebar toggle
+function toggleMobileAdminSidebar(){
+  const sb=document.getElementById('adminSidebar');
+  sb.classList.toggle('mobile-open');
+}
+
 function openAdmin(){
   closeUserMenu();document.getElementById('adminOverlay').classList.add('active');document.body.style.overflow='hidden';
   const sidebar=document.getElementById('adminSidebar');
+  // Reset mobile sidebar state
+  sidebar.classList.remove('mobile-open');
+  
   if(state.user&&state.user.role==='admin'){sidebar.style.display='';switchAdminTab(state.adminTab||'dashboard');}
   else{showAdminGate();}
 }
@@ -1180,6 +1173,9 @@ async function handleAdminLogin(){
 function switchAdminTab(tab){
   state.adminTab=tab;
   const sidebar=document.getElementById('adminSidebar');
+  // Close mobile sidebar on tab switch
+  sidebar.classList.remove('mobile-open');
+  
   if(!sidebar)return;
   sidebar.querySelectorAll('.admin-nav-item').forEach(n=>n.classList.toggle('active',n.dataset.adminTab===tab));
   const main=document.getElementById('adminMain');
@@ -1194,7 +1190,13 @@ async function loadAdminDashboard(){
   try{
     const data=await api('/admin/stats');const s=data.overview;
     main.innerHTML=`
-      <div class="admin-header"><h1>Dashboard</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+      <div class="admin-header">
+        <div class="admin-header-left">
+          <button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button>
+          <h1>Dashboard</h1>
+        </div>
+        <button class="admin-close" onclick="closeAdmin()">← Back to Site</button>
+      </div>
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-label">Movies</div><div class="stat-value">${s.totalMovies||0}</div></div>
         <div class="stat-card"><div class="stat-label">Series</div><div class="stat-value">${s.totalSeries||0}</div></div>
@@ -1218,25 +1220,28 @@ async function loadAdminMovies(main,searchQuery=''){
 
     const filtered=searchQuery?list.filter(m=>m.title&&m.title.toLowerCase().includes(searchQuery.toLowerCase())):list;
 
+    // Removed "Add New" button from this section as requested
     if(filtered.length===0){
       main.innerHTML=`<div class="admin-header">
         <div class="admin-header-left">
+          <button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button>
           <h1>Manage Content</h1>
           <div class="admin-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="adminSearchInput" placeholder="Search content…" value="${searchQuery}" oninput="debounceAdminSearch(this.value)"/></div>
         </div>
-        <div style="display:flex;gap:8px"><button class="btn-submit" style="padding:9px 20px;font-size:.85rem" onclick="switchAdminTab('upload')">+ Add New</button><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+        <button class="admin-close" onclick="closeAdmin()">← Back to Site</button>
       </div>
-        <p style="color:var(--muted);padding:20px 0">${searchQuery?'No content matches "'+searchQuery+'"':'No content yet.'} ${!searchQuery?'<button style="color:var(--gold);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline" onclick="switchAdminTab(\'upload\')">Upload your first movie or series</button>.':''}</p>`;
+        <p style="color:var(--muted);padding:20px 0">${searchQuery?'No content matches "'+searchQuery+'"':'No content yet.'}</p>`;
       return;
     }
 
     main.innerHTML=`
       <div class="admin-header">
         <div class="admin-header-left">
+          <button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button>
           <h1>Manage Content</h1>
           <div class="admin-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="adminSearchInput" placeholder="Search content…" value="${searchQuery}" oninput="debounceAdminSearch(this.value)"/></div>
         </div>
-        <div style="display:flex;gap:8px"><button class="btn-submit" style="padding:9px 20px;font-size:.85rem" onclick="switchAdminTab('upload')">+ Add New</button><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+        <button class="admin-close" onclick="closeAdmin()">← Back to Site</button>
       </div>
       <div style="color:var(--muted);font-size:.82rem;margin-bottom:14px">${filtered.length} item${filtered.length!==1?'s':''}${searchQuery?' found for "'+searchQuery+'"':''}</div>
       <div class="admin-table-wrap"><table>
@@ -1271,13 +1276,20 @@ function editMovie(id){
   // Update sidebar active state
   document.querySelectorAll('.admin-nav-item').forEach(n=>n.classList.toggle('active',n.dataset.adminTab==='upload'));
   state.adminTab='upload';
-  showUploadForm(main,movie);
+  // Pass the movie object to showUploadForm so it can populate fields
+  showUploadForm(main, movie);
 }
 
 function confirmDeleteMovie(id,title){
   const main=document.getElementById('adminMain');
   main.innerHTML=`
-    <div class="admin-header"><h1>Delete Content</h1><button class="admin-close" onclick="loadAdminMovies(document.getElementById('adminMain'),document.getElementById('adminSearchInput')?.value||'')">← Cancel</button></div>
+    <div class="admin-header">
+      <div class="admin-header-left">
+        <button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button>
+        <h1>Delete Content</h1>
+      </div>
+      <button class="admin-close" onclick="loadAdminMovies(document.getElementById('adminMain'),document.getElementById('adminSearchInput')?.value||'')">← Cancel</button>
+    </div>
     <div class="confirm-delete-box">
       <h3>Are you sure?</h3>
       <p>You are about to permanently delete:<br/><span class="cd-title">"${title}"</span></p>
@@ -1293,7 +1305,6 @@ async function executeDeleteMovie(id){
   try{
     await api('/movies/'+id,{method:'DELETE'});
     showToast('Content deleted successfully','success');
-    // Also remove from wishlist if present
     const wishList=getWishlist();
     const idx=wishList.indexOf(id);
     if(idx>-1){wishList.splice(idx,1);saveWishlist(wishList);}
@@ -1301,27 +1312,50 @@ async function executeDeleteMovie(id){
   }catch(e){showToast(e.message,'error');}
 }
 
-function showUploadForm(main){
+// ═══ Upload/Edit Form ═══
+function showUploadForm(main, movieData = null){
+  const isEdit = !!movieData;
+  // Prepare values
+  const vTitle = isEdit ? (movieData.title || '') : '';
+  const vType = isEdit ? (movieData.type || 'movie') : 'movie';
+  const vYear = isEdit ? (movieData.releaseYear || '') : '';
+  const vGenres = isEdit ? (movieData.genres || []) : [];
+  const vRating = isEdit ? (movieData.rating || '') : '';
+  const vDuration = isEdit ? (movieData.duration || '') : '';
+  const vPoster = isEdit ? (movieData.posterUrl || '') : '';
+  const vBackdrop = isEdit ? (movieData.backdropUrl || '') : '';
+  const vVideo = isEdit ? (movieData.videoUrl || '') : '';
+  const vHls = isEdit ? (movieData.hlsUrl || '') : '';
+  const vDesc = isEdit ? (movieData.description || '') : '';
+  const genreString = Array.isArray(vGenres) ? vGenres.join(', ') : vGenres;
+
   main.innerHTML=`
-    <div class="admin-header"><h1>Upload Content</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+    <div class="admin-header">
+      <div class="admin-header-left">
+        <button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button>
+        <h1>${isEdit ? 'Edit Content' : 'Upload Content'}</h1>
+      </div>
+      <button class="admin-close" onclick="closeAdmin()">← Back to Site</button>
+    </div>
     <div class="upload-panel">
-      <div class="form-group"><label class="form-label">Title *</label><input class="admin-input" id="up_title" placeholder="Movie or series title"/></div>
+      <div class="form-group"><label class="form-label">Title *</label><input class="admin-input" id="up_title" value="${vTitle}" placeholder="Movie or series title"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label class="form-label">Type</label><select class="admin-input" id="up_type"><option value="movie">Movie</option><option value="series">Series</option><option value="original">Original</option></select></div>
-        <div class="form-group"><label class="form-label">Release Year</label><input class="admin-input" id="up_year" type="number" placeholder="2025"/></div>
+        <div class="form-group"><label class="form-label">Type</label><select class="admin-input" id="up_type"><option value="movie" ${vType==='movie'?'selected':''}>Movie</option><option value="series" ${vType==='series'?'selected':''}>Series</option><option value="original" ${vType==='original'?'selected':''}>Original</option></select></div>
+        <div class="form-group"><label class="form-label">Release Year</label><input class="admin-input" id="up_year" type="number" value="${vYear}" placeholder="2025"/></div>
       </div>
-      <div class="form-group"><label class="form-label">Genres (comma separated)</label><input class="admin-input" id="up_genres" placeholder="Action, Sci-Fi, Drama"/></div>
+      <div class="form-group"><label class="form-label">Genres (comma separated)</label><input class="admin-input" id="up_genres" value="${genreString}" placeholder="Action, Sci-Fi, Drama"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label class="form-label">Rating</label><input class="admin-input" id="up_rating" placeholder="e.g. 8.5"/></div>
-        <div class="form-group"><label class="form-label">Duration (minutes)</label><input class="admin-input" id="up_duration" type="number" placeholder="120"/></div>
+        <div class="form-group"><label class="form-label">Rating</label><input class="admin-input" id="up_rating" value="${vRating}" placeholder="e.g. 8.5"/></div>
+        <div class="form-group"><label class="form-label">Duration (minutes)</label><input class="admin-input" id="up_duration" type="number" value="${vDuration}" placeholder="120"/></div>
       </div>
-      <div class="form-group"><label class="form-label">Poster Image URL</label><input class="admin-input" id="up_poster" placeholder="https://example.com/poster.jpg"/></div>
-      <div class="form-group"><label class="form-label">Backdrop Image URL</label><input class="admin-input" id="up_backdrop" placeholder="https://example.com/backdrop.jpg"/></div>
-      <div class="form-group"><label class="form-label">Video URL (MP4 direct link)</label><input class="admin-input" id="up_video" placeholder="https://example.com/video.mp4"/></div>
-      <div class="form-group"><label class="form-label">HLS Stream URL (.m3u8) — optional</label><input class="admin-input" id="up_hls" placeholder="https://example.com/stream.m3u8"/></div>
-      <div class="form-group"><label class="form-label">Description</label><textarea class="admin-input" id="up_desc" placeholder="Write a description…" rows="4" style="resize:vertical"></textarea></div>
+      <div class="form-group"><label class="form-label">Poster Image URL</label><input class="admin-input" id="up_poster" value="${vPoster}" placeholder="https://example.com/poster.jpg"/></div>
+      <div class="form-group"><label class="form-label">Backdrop Image URL</label><input class="admin-input" id="up_backdrop" value="${vBackdrop}" placeholder="https://example.com/backdrop.jpg"/></div>
+      <div class="form-group"><label class="form-label">Video URL (MP4 direct link)</label><input class="admin-input" id="up_video" value="${vVideo}" placeholder="https://example.com/video.mp4"/></div>
+      <div class="form-group"><label class="form-label">HLS Stream URL (.m3u8) — optional</label><input class="admin-input" id="up_hls" value="${vHls}" placeholder="https://example.com/stream.m3u8"/></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="admin-input" id="up_desc" placeholder="Write a description…" rows="4" style="resize:vertical">${vDesc}</textarea></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn-submit" id="btnSubmitMovie" onclick="submitMovie()">Save Content</button>
+        <button class="btn-submit" id="btnSubmitMovie" onclick="submitMovie()">${isEdit ? 'Update Content' : 'Save Content'}</button>
+        <button class="btn-gate-cancel" style="width:auto; margin-top:0" onclick="loadAdminMovies(document.getElementById('adminMain'))">Cancel</button>
       </div>
     </div>`;
 }
@@ -1345,13 +1379,21 @@ async function submitMovie(){
   };
   if(!payload.title){showToast('Title is required.','error');if(btn){btn.disabled=false;btn.textContent='Save Content';}return;}
   try{
-    await api('/movies',{method:'POST',body:JSON.stringify(payload)});
-    showToast('"'+payload.title+'" saved successfully!','success');
-    // Close admin, refresh home data, scroll to top so user sees new content
+    if(state.editingMovieId){
+      // UPDATE (PUT)
+      await api('/movies/'+state.editingMovieId,{method:'PUT',body:JSON.stringify(payload)});
+      showToast('"'+payload.title+'" updated successfully!','success');
+    } else {
+      // CREATE (POST)
+      await api('/movies',{method:'POST',body:JSON.stringify(payload)});
+      showToast('"'+payload.title+'" saved successfully!','success');
+    }
+    // Cleanup
+    state.editingMovieId = null;
     closeAdmin();
     await refreshHomeData();
     window.scrollTo({top:0,behavior:'smooth'});
-    showToast('Your new content is now live on the platform!','success');
+    showToast('Changes are now live on the platform!','success');
   }catch(e){showToast(e.message,'error');if(btn){btn.disabled=false;btn.textContent='Save Content';}}
 }
 
