@@ -384,37 +384,102 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 .admin-menu-toggle{display:none;background:none;border:none;color:var(--text);cursor:pointer;padding:8px;transition:color .2s}
 .admin-menu-toggle:hover{color:var(--gold)}
 
-/* ── Admin form section dividers & new fields ── */
-.upload-section{margin:24px 0 0;padding-top:20px;border-top:1px solid var(--border);}
-.upload-section-title{font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-.upload-section-title svg{opacity:.7;}
-.admin-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:.92rem;color:var(--text);outline:none;transition:border-color var(--transition);}
-.admin-input:focus{border-color:var(--gold);}
-.admin-input::placeholder{color:rgba(136,136,170,.5);}
-.admin-input option{background:var(--bg3);color:var(--text);}
-/* checkbox group */
-.check-group{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;}
-.check-chip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 13px;cursor:pointer;font-size:.85rem;transition:all .2s;user-select:none;}
-.check-chip input{width:15px;height:15px;accent-color:var(--gold);cursor:pointer;}
-.check-chip:has(input:checked){background:rgba(224,168,48,.12);border-color:rgba(224,168,48,.4);color:var(--gold);}
-/* episode manager */
-.ep-list{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
-.ep-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px;position:relative;}
-.ep-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.ep-card-num{font-size:.75rem;font-weight:700;letter-spacing:1px;color:var(--cyan);text-transform:uppercase;}
-.ep-remove-btn{background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.25);color:var(--red);border-radius:6px;padding:3px 10px;font-size:.75rem;cursor:pointer;transition:all .2s;font-family:inherit;}
-.ep-remove-btn:hover{background:var(--red);color:#fff;}
-.ep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.ep-grid .form-group{margin-bottom:0;}
-.ep-full{grid-column:1/-1;}
-.btn-add-ep{display:flex;align-items:center;gap:8px;background:rgba(0,212,255,.08);border:1px dashed rgba(0,212,255,.3);color:var(--cyan);border-radius:10px;padding:11px 18px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;width:100%;}
-.btn-add-ep:hover{background:rgba(0,212,255,.14);border-style:solid;}
-/* type-conditional visibility */
-.series-only{display:none;}
-/* preview image thumb */
-.img-preview{width:60px;height:80px;border-radius:6px;object-fit:cover;border:1px solid var(--border);display:none;margin-top:6px;}
-.img-preview.show{display:block;}
-.toast-container{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+/* ════════════════════════════════════════════
+   AMAZON PRIME–STYLE EPISODE MANAGER (Admin)
+   ════════════════════════════════════════════ */
+
+/* ── Upload form helpers ── */
+.upload-panel{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:clamp(16px,4vw,28px)}
+.up-section{margin-top:28px;padding-top:24px;border-top:1px solid var(--border)}
+.up-section-hd{display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.72rem;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold)}
+.up-section-hd svg{opacity:.75;flex-shrink:0}
+.admin-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);outline:none;transition:border-color var(--transition)}
+.admin-input:focus{border-color:var(--gold)}
+.admin-input::placeholder{color:rgba(136,136,170,.5)}
+.admin-input option{background:var(--bg3)}
+.img-thumb{width:72px;height:96px;border-radius:6px;object-fit:cover;border:1px solid var(--border);display:none;margin-top:6px}
+.img-thumb.bd{width:128px;height:72px}
+.img-thumb.show{display:block}
+
+/* ── Season tabs ── */
+.season-tabs-bar{display:flex;align-items:center;gap:0;border-bottom:2px solid rgba(255,255,255,.08);margin-bottom:20px;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
+.season-tabs-bar::-webkit-scrollbar{display:none}
+.season-tab-btn{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;padding:10px 18px;cursor:pointer;white-space:nowrap;transition:all .2s;position:relative}
+.season-tab-btn.active{color:var(--text);border-bottom-color:var(--gold)}
+.season-tab-btn .stab-count{background:rgba(255,255,255,.1);border-radius:99px;font-size:.65rem;padding:1px 7px;margin-left:5px;font-weight:700}
+.season-tab-btn.active .stab-count{background:rgba(224,168,48,.2);color:var(--gold)}
+.season-add-btn{background:none;border:1px dashed rgba(255,255,255,.2);border-radius:8px;color:var(--muted);font-family:inherit;font-size:.82rem;padding:6px 14px;cursor:pointer;margin-left:8px;flex-shrink:0;transition:all .2s}
+.season-add-btn:hover{border-color:var(--gold);color:var(--gold)}
+.season-del-btn{background:none;border:none;color:var(--red);font-size:.7rem;cursor:pointer;padding:2px 5px;margin-left:4px;opacity:.6;transition:opacity .2s;vertical-align:middle}
+.season-del-btn:hover{opacity:1}
+
+/* ── Episode list ── */
+.ep-manager-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.ep-manager-info{font-size:.82rem;color:var(--muted)}
+.ep-manager-info span{color:var(--gold);font-weight:600}
+.btn-add-episode{display:inline-flex;align-items:center;gap:7px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--cyan);border-radius:99px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-add-episode:hover{background:rgba(0,212,255,.18);border-color:var(--cyan)}
+
+/* ── Episode card (Prime style) ── */
+.ep-card-list{display:flex;flex-direction:column;gap:0}
+.ep-card{display:flex;align-items:stretch;gap:0;border-bottom:1px solid rgba(255,255,255,.05);padding:14px 0;transition:background .15s;position:relative}
+.ep-card:hover{background:rgba(255,255,255,.02);border-radius:10px;padding-left:8px;padding-right:8px}
+.ep-card.editing{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.2);border-radius:12px;padding:16px;margin-bottom:4px;flex-direction:column;gap:16px}
+.ep-drag-handle{display:flex;align-items:center;padding:0 10px 0 4px;color:rgba(255,255,255,.2);cursor:grab;flex-shrink:0;touch-action:none}
+.ep-drag-handle:active{cursor:grabbing}
+.ep-drag-handle svg{pointer-events:none}
+.ep-thumb-wrap{position:relative;flex-shrink:0;width:120px;height:68px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07)}
+.ep-thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.ep-thumb-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.2)}
+.ep-play-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.ep-card:hover .ep-play-overlay{opacity:1}
+.ep-status-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%}
+.ep-status-dot.has-video{background:var(--green)}
+.ep-status-dot.no-video{background:var(--red)}
+.ep-meta{flex:1;padding:0 14px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.ep-meta-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.ep-num-badge{font-size:.68rem;font-weight:700;letter-spacing:.8px;color:var(--cyan);text-transform:uppercase}
+.ep-dur-badge{font-size:.72rem;color:var(--muted);background:rgba(255,255,255,.07);padding:1px 8px;border-radius:4px}
+.ep-vid-badge{font-size:.65rem;font-weight:700;padding:1px 7px;border-radius:4px}
+.ep-vid-badge.ok{background:rgba(0,230,118,.12);color:var(--green)}
+.ep-vid-badge.missing{background:rgba(255,71,87,.1);color:var(--red)}
+.ep-title-text{font-size:.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.ep-desc-text{font-size:.78rem;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
+.ep-actions{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:6px;flex-shrink:0;padding-left:10px}
+.ep-act-btn{background:none;border:1px solid rgba(255,255,255,.1);color:var(--muted);border-radius:7px;padding:5px 11px;font-family:inherit;font-size:.75rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.ep-act-btn:hover{color:var(--text);border-color:rgba(255,255,255,.25)}
+.ep-act-btn.edit-btn:hover{color:var(--cyan);border-color:rgba(0,212,255,.35);background:rgba(0,212,255,.06)}
+.ep-act-btn.del-btn:hover{color:var(--red);border-color:rgba(255,71,87,.3);background:rgba(255,71,87,.06)}
+.ep-move-btns{display:flex;gap:3px}
+.ep-move-btn{background:none;border:1px solid rgba(255,255,255,.08);color:var(--muted);border-radius:5px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:.7rem}
+.ep-move-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.ep-move-btn:disabled{opacity:.25;cursor:not-allowed}
+
+/* ── Inline edit form ── */
+.ep-edit-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ep-edit-form .span2{grid-column:1/-1}
+.ep-edit-form .form-group{margin:0}
+.ep-edit-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn-ep-save{background:var(--gold);color:#000;border:none;border-radius:99px;padding:9px 22px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-ep-save:hover{background:var(--gold2)}
+.btn-ep-cancel{background:none;border:1px solid var(--border);color:var(--muted);border-radius:99px;padding:9px 18px;font-family:inherit;font-size:.88rem;cursor:pointer;transition:all .2s}
+.btn-ep-cancel:hover{color:var(--text)}
+
+/* ── Empty state ── */
+.ep-empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.ep-empty svg{margin:0 auto 12px;opacity:.2}
+.ep-empty p{font-size:.9rem}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  .ep-thumb-wrap{width:80px;height:46px}
+  .ep-meta{padding:0 8px}
+  .ep-actions{gap:4px}
+  .ep-act-btn span{display:none}
+  .ep-edit-form{grid-template-columns:1fr}
+  .ep-edit-form .span2{grid-column:1}
+}
+
 .toast{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.88rem;min-width:220px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4);animation:slideInRight .3s ease;display:flex;align-items:center;gap:10px;word-break:break-word}
 .toast.success{border-left:3px solid var(--green)}
 .toast.error{border-left:3px solid var(--red)}
@@ -1270,7 +1335,7 @@ function openDetail(movie){
 
     <div class="prime-body">
       <h1 class="prime-title">${movie.title}</h1>
-      ${isSeries?`<div class="prime-season">Season ${movie.seasonNumber||1}</div>`:''}
+      ${isSeries?`<div class="prime-season">Season 1</div>`:''}
       <div class="prime-source-badge">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         SkFlip ${isSeries?'Series':'Films'}
@@ -1328,38 +1393,26 @@ function openDetail(movie){
 
       <div class="prime-meta-row">
         ${movie.rating?`<div class="prime-imdb">IMDb <span>${movie.rating}</span></div>`:''}
-        ${(()=>{
-          const c=Array.isArray(movie.episodes)&&movie.episodes.length?movie.episodes.length:(movie.episodeCount||movie.episodecount||0);
-          if(isSeries) return `<span class="prime-episodes-info">${c?c+' episodes':'Series'}${movie.releaseYear?'  '+movie.releaseYear:''}</span>`;
-          return movie.releaseYear?`<span class="prime-episodes-info">${movie.releaseYear}</span>`:'';
-        })()}
+        ${(episodeCount||isSeries)?`<span class="prime-episodes-info">${episodeCount?episodeCount+' episodes':'Series'}${movie.releaseYear?'  '+movie.releaseYear:''}</span>`
+          :movie.releaseYear?`<span class="prime-episodes-info">${movie.releaseYear}</span>`:''}
       </div>
 
       <div class="prime-badges">
-        ${movie.isNew!==false&&isSeries?'<span class="prime-badge new">NEW SERIES</span>':movie.isNew&&!isSeries?'<span class="prime-badge new">NEW</span>':''}
-        <span class="prime-badge">${movie.ageRating||'U/A 16+'}</span>
-        ${movie.hasCC?'<span class="prime-badge">CC</span>':''}
-        ${movie.hasAD?'<span class="prime-badge">AD</span>':''}
-        ${movie.is4K!==false?`<span class="prime-badge new">${movie.videoQuality||'4K UHD'}</span>`:''}
+        ${isSeries?'<span class="prime-badge new">NEW SERIES</span>':''}
+        <span class="prime-badge">U/A 16+</span>
+        ${movie.duration||isSeries?'<span class="prime-badge">CC</span>':''}
+        <span class="prime-badge">AD</span>
+        <span class="prime-badge new">4K UHD</span>
       </div>
 
       <div class="prime-lang-section">
         <div class="prime-lang-title">Languages</div>
-        <div class="prime-lang-info">
-          ${(()=>{
-            const audio = Array.isArray(movie.audioLanguages)&&movie.audioLanguages.length ? movie.audioLanguages : null;
-            const subs  = Array.isArray(movie.subtitleLanguages)&&movie.subtitleLanguages.length ? movie.subtitleLanguages : null;
-            if(audio&&subs) return `Audio (${audio.length}): ${audio.join(', ')}<br/>Subtitles (${subs.length}): ${subs.join(', ')}`;
-            if(audio) return `Audio (${audio.length}): ${audio.join(', ')}`;
-            if(subs)  return `Subtitles (${subs.length}): ${subs.join(', ')}`;
-            return 'Language info not available';
-          })()}
-        </div>
+        <div class="prime-lang-info">Audio (4), Subtitles (3)</div>
       </div>
 
       ${isSeries?`
       <div class="prime-tabs">
-        <button class="prime-tab active" id="tabEpisodes" onclick="switchPrimeTab('episodes')">Episodes ${(()=>{const c=Array.isArray(movie.episodes)&&movie.episodes.length?movie.episodes.length:(movie.episodeCount||movie.episodecount||0);return c?'('+c+')':'';})()}</button>
+        <button class="prime-tab active" id="tabEpisodes" onclick="switchPrimeTab('episodes')">Episodes ${episodeCount?'('+episodeCount+')':''}</button>
         <button class="prime-tab" id="tabDetails" onclick="switchPrimeTab('details')">More details</button>
       </div>
       <div id="primeTabContent">
@@ -1381,33 +1434,13 @@ function openDetail(movie){
 }
 
 function buildEpisodeList(movie){
-  // Use real episodes array if available
-  const eps = Array.isArray(movie.episodes) && movie.episodes.length ? movie.episodes : null;
-  const count = eps ? eps.length : (movie.episodeCount||movie.episodecount||0);
-  if(count===0) return '<div style="color:var(--muted);font-size:.88rem;padding:20px 0">No episodes listed.</div>';
-
-  if(eps){
-    return eps.map((ep,i)=>{
-      const hasVid = !!(ep.videoUrl||ep.hlsUrl);
-      return `<div class="prime-ep-item" onclick="${hasVid?`openEpisode(${JSON.stringify(ep).replace(/"/g,'&quot;')},state.currentMovie);closeDetail()`:'showToast(\'No video for this episode.\',\'info\')'}">
-        <div class="prime-ep-play">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-        </div>
-        <div class="prime-ep-info">
-          <div class="prime-ep-title">${ep.title||('Episode '+(ep.episodeNumber||i+1))}</div>
-          <div class="prime-ep-sub">${ep.description?ep.description.slice(0,80)+(ep.description.length>80?'…':''):movie.title+(ep.duration?' · '+ep.duration+' min':'')}
-          </div>
-        </div>
-        <button class="prime-ep-more" onclick="event.stopPropagation()">⋮</button>
-      </div>`;
-    }).join('');
-  }
-
-  // Fallback: generate placeholder rows from count
+  const count=movie.episodeCount||movie.episodes||5;
   let html='';
-  for(let i=1;i<=Math.min(count,20);i++){
+  for(let i=1;i<=Math.min(count,10);i++){
     html+=`<div class="prime-ep-item" onclick="openPlayer(state.currentMovie);closeDetail()">
-      <div class="prime-ep-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="prime-ep-play">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </div>
       <div class="prime-ep-info">
         <div class="prime-ep-title">Episode ${i}</div>
         <div class="prime-ep-sub">${movie.title}</div>
@@ -1415,15 +1448,7 @@ function buildEpisodeList(movie){
       <button class="prime-ep-more" onclick="event.stopPropagation()">⋮</button>
     </div>`;
   }
-  return html;
-}
-
-function openEpisode(ep, movie){
-  const src = ep.hlsUrl||ep.videoUrl||movie.hlsUrl||movie.videoUrl;
-  if(!src){showToast('No video available for this episode.','error');return;}
-  // Temporarily patch currentMovie video URL for this episode
-  const epMovie = {...movie, title: (ep.title||movie.title), videoUrl: ep.videoUrl||movie.videoUrl, hlsUrl: ep.hlsUrl||movie.hlsUrl};
-  openPlayer(epMovie);
+  return html||'<div style="color:var(--muted);font-size:.88rem;padding:20px 0">No episodes listed.</div>';
 }
 
 function buildMovieDetails(movie){
@@ -1654,37 +1679,67 @@ async function executeDeleteMovie(id){
   }catch(e){showToast(e.message,'error');}
 }
 
-// ═══ Upload/Edit Form ═══
-// Episode state lives in the form DOM; we read it at submit time
+// ═══════════════════════════════════════════════════
+//  UPLOAD / EDIT FORM  +  EPISODE MANAGER
+// ═══════════════════════════════════════════════════
+
+// Runtime episode state: { [seasonNum]: [ epObj, … ] }
+// epObj = { id, episodeNumber, title, description, thumbnailUrl, videoUrl, hlsUrl, duration, airDate, _editing }
+let adminSeasons = {};      // keyed by season number (string)
+let adminActiveSeason = 1;  // currently visible season tab
+
+/* ──────────────────────── helpers ──────────────────────── */
+function epId(){ return 'ep_' + Date.now() + '_' + Math.random().toString(36).slice(2,7); }
+
+function isSType(val){ return val==='series'||val==='original'; }
+
+function getEpisodesByseason(){
+  // Returns the current adminSeasons object
+  return adminSeasons;
+}
+
+function initSeasonState(movieData){
+  adminSeasons = {};
+  adminActiveSeason = 1;
+  if(!movieData) return;
+  const eps = Array.isArray(movieData.episodes) ? movieData.episodes : [];
+  if(eps.length === 0){
+    // Create one empty season
+    const s = movieData.seasonNumber || 1;
+    adminSeasons[s] = [];
+    adminActiveSeason = s;
+    return;
+  }
+  eps.forEach(ep => {
+    const s = ep.season || ep.seasonNumber || 1;
+    if(!adminSeasons[s]) adminSeasons[s] = [];
+    adminSeasons[s].push({ id: epId(), episodeNumber: ep.episodeNumber||1, title: ep.title||'', description: ep.description||'', thumbnailUrl: ep.thumbnailUrl||ep.posterUrl||'', videoUrl: ep.videoUrl||'', hlsUrl: ep.hlsUrl||'', duration: ep.duration||'', airDate: ep.airDate||'', _editing: false });
+  });
+  adminActiveSeason = Math.min(...Object.keys(adminSeasons).map(Number));
+}
+
+/* ──────────────────────── main form ──────────────────────── */
 function showUploadForm(main, movieData = null){
   const isEdit = !!movieData;
-  const vTitle     = isEdit ? (movieData.title || '')          : '';
-  const vType      = isEdit ? (movieData.type  || 'movie')     : 'movie';
-  const vYear      = isEdit ? (movieData.releaseYear || '')     : '';
-  const vGenres    = isEdit ? (movieData.genres || [])          : [];
-  const vRating    = isEdit ? (movieData.rating || '')          : '';
-  const vDuration  = isEdit ? (movieData.duration || '')        : '';
-  const vPoster    = isEdit ? (movieData.posterUrl  || '')      : '';
-  const vBackdrop  = isEdit ? (movieData.backdropUrl || '')     : '';
-  const vVideo     = isEdit ? (movieData.videoUrl  || '')       : '';
-  const vHls       = isEdit ? (movieData.hlsUrl    || '')       : '';
-  const vDesc      = isEdit ? (movieData.description || '')     : '';
-  const vSeason    = isEdit ? (movieData.seasonNumber || 1)     : 1;
-  const vAgeRating = isEdit ? (movieData.ageRating || 'U/A 16+') : 'U/A 16+';
-  const vAudio     = isEdit ? (Array.isArray(movieData.audioLanguages)    ? movieData.audioLanguages.join(', ')    : (movieData.audioLanguages || ''))    : '';
-  const vSubs      = isEdit ? (Array.isArray(movieData.subtitleLanguages) ? movieData.subtitleLanguages.join(', ') : (movieData.subtitleLanguages || ''))  : '';
-  const vIs4K      = isEdit ? !!movieData.is4K      : true;
-  const vHasCC     = isEdit ? !!movieData.hasCC     : false;
-  const vHasAD     = isEdit ? !!movieData.hasAD     : false;
-  const vIsNew     = isEdit ? !!movieData.isNew     : true;
-  const vEpisodes  = isEdit ? (movieData.episodes || [])        : [];
-  const genreStr   = Array.isArray(vGenres) ? vGenres.join(', ') : vGenres;
-  const isSeries   = vType === 'series' || vType === 'original';
+  const vTitle   = isEdit ? (movieData.title||'')          : '';
+  const vType    = isEdit ? (movieData.type||'movie')      : 'movie';
+  const vYear    = isEdit ? (movieData.releaseYear||'')    : '';
+  const vGenres  = isEdit ? (movieData.genres||[])         : [];
+  const vRating  = isEdit ? (movieData.rating||'')         : '';
+  const vDur     = isEdit ? (movieData.duration||'')       : '';
+  const vPoster  = isEdit ? (movieData.posterUrl||'')      : '';
+  const vBD      = isEdit ? (movieData.backdropUrl||'')    : '';
+  const vVideo   = isEdit ? (movieData.videoUrl||'')       : '';
+  const vHls     = isEdit ? (movieData.hlsUrl||'')         : '';
+  const vDesc    = isEdit ? (movieData.description||'')    : '';
+  const genreStr = Array.isArray(vGenres) ? vGenres.join(', ') : vGenres;
+  const showSeries = isSType(vType);
 
-  const ageRatingOpts = ['U','U/A 7+','U/A 13+','U/A 16+','A'].map(r =>
-    `<option value="${r}" ${vAgeRating===r?'selected':''}>${r}</option>`).join('');
+  // Init episode state from existing data
+  if(isEdit && showSeries) initSeasonState(movieData);
+  else { adminSeasons = { 1:[] }; adminActiveSeason = 1; }
 
-  main.innerHTML=`
+  main.innerHTML = `
     <div class="admin-header">
       <div class="admin-header-left">
         <button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button>
@@ -1694,256 +1749,389 @@ function showUploadForm(main, movieData = null){
     </div>
     <div class="upload-panel">
 
-      <!-- ── BASIC INFO ── -->
-      <div class="form-group"><label class="form-label">Title *</label><input class="admin-input" id="up_title" value="${vTitle}" placeholder="Movie or series title"/></div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group">
-          <label class="form-label">Type</label>
-          <select class="admin-input" id="up_type" onchange="onAdminTypeChange(this.value)">
+      <!-- Basic Info -->
+      <div class="form-group"><label class="form-label">Title *</label>
+        <input class="admin-input" id="up_title" value="${vTitle}" placeholder="Movie or series title"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div class="form-group"><label class="form-label">Type</label>
+          <select class="admin-input" id="up_type" onchange="onUpTypeChange(this.value)">
             <option value="movie"    ${vType==='movie'   ?'selected':''}>Movie</option>
             <option value="series"   ${vType==='series'  ?'selected':''}>Series</option>
             <option value="original" ${vType==='original'?'selected':''}>Original</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Release Year</label><input class="admin-input" id="up_year" type="number" value="${vYear}" placeholder="2025"/></div>
+        <div class="form-group"><label class="form-label">Release Year</label>
+          <input class="admin-input" id="up_year" type="number" value="${vYear}" placeholder="2025"/>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px"><label class="form-label">Genres (comma separated)</label>
+        <input class="admin-input" id="up_genres" value="${genreStr}" placeholder="Action, Drama, Thriller"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div class="form-group"><label class="form-label">IMDb Rating</label>
+          <input class="admin-input" id="up_rating" value="${vRating}" placeholder="e.g. 8.5"/>
+        </div>
+        <div class="form-group"><label class="form-label">Duration (minutes)</label>
+          <input class="admin-input" id="up_duration" type="number" value="${vDur}" placeholder="120"/>
+        </div>
       </div>
 
-      <div class="form-group"><label class="form-label">Genres (comma separated)</label><input class="admin-input" id="up_genres" value="${genreStr}" placeholder="Action, Sci-Fi, Drama"/></div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label class="form-label">IMDb Rating</label><input class="admin-input" id="up_rating" value="${vRating}" placeholder="e.g. 8.5"/></div>
-        <div class="form-group"><label class="form-label">Duration (minutes)</label><input class="admin-input" id="up_duration" type="number" value="${vDuration}" placeholder="120"/></div>
-      </div>
-
-      <!-- ── MEDIA URLS ── -->
-      <div class="upload-section">
-        <div class="upload-section-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <!-- Media -->
+      <div class="up-section">
+        <div class="up-section-hd">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
           Media &amp; Images
         </div>
-        <div class="form-group">
-          <label class="form-label">Poster Image URL</label>
-          <input class="admin-input" id="up_poster" value="${vPoster}" placeholder="https://example.com/poster.jpg" oninput="previewImg('up_poster','prev_poster')"/>
-          <img id="prev_poster" class="img-preview ${vPoster?'show':''}" src="${vPoster||''}" alt="poster preview"/>
+        <div class="form-group"><label class="form-label">Poster Image URL</label>
+          <input class="admin-input" id="up_poster" value="${vPoster}" placeholder="https://…/poster.jpg" oninput="upPreview(this,'prvPoster')"/>
+          <img id="prvPoster" class="img-thumb ${vPoster?'show':''}" src="${vPoster}" alt=""/>
         </div>
-        <div class="form-group">
-          <label class="form-label">Backdrop Image URL</label>
-          <input class="admin-input" id="up_backdrop" value="${vBackdrop}" placeholder="https://example.com/backdrop.jpg" oninput="previewImg('up_backdrop','prev_backdrop')"/>
-          <img id="prev_backdrop" class="img-preview ${vBackdrop?'show':''}" src="${vBackdrop||''}" alt="backdrop preview" style="width:120px;height:68px"/>
+        <div class="form-group" style="margin-top:10px"><label class="form-label">Backdrop / Banner URL</label>
+          <input class="admin-input" id="up_backdrop" value="${vBD}" placeholder="https://…/backdrop.jpg" oninput="upPreview(this,'prvBD')"/>
+          <img id="prvBD" class="img-thumb bd ${vBD?'show':''}" src="${vBD}" alt=""/>
         </div>
-        <div class="form-group"><label class="form-label">Video URL (MP4)</label><input class="admin-input" id="up_video" value="${vVideo}" placeholder="https://example.com/video.mp4"/></div>
-        <div class="form-group"><label class="form-label">HLS Stream URL (.m3u8) — optional</label><input class="admin-input" id="up_hls" value="${vHls}" placeholder="https://example.com/stream.m3u8"/></div>
+        <div class="form-group" style="margin-top:10px"><label class="form-label">Default Video URL (MP4)</label>
+          <input class="admin-input" id="up_video" value="${vVideo}" placeholder="https://…/video.mp4"/>
+        </div>
+        <div class="form-group" style="margin-top:10px"><label class="form-label">HLS Stream (.m3u8) — optional</label>
+          <input class="admin-input" id="up_hls" value="${vHls}" placeholder="https://…/stream.m3u8"/>
+        </div>
       </div>
 
-      <!-- ── DESCRIPTION ── -->
-      <div class="upload-section">
-        <div class="upload-section-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <!-- Description -->
+      <div class="up-section">
+        <div class="up-section-hd">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
           Description
         </div>
-        <div class="form-group"><textarea class="admin-input" id="up_desc" placeholder="Write a description…" rows="4" style="resize:vertical">${vDesc}</textarea></div>
-      </div>
-
-      <!-- ── CONTENT RATINGS & BADGES ── -->
-      <div class="upload-section">
-        <div class="upload-section-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          Content Ratings &amp; Badges
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-          <div class="form-group">
-            <label class="form-label">Age Rating</label>
-            <select class="admin-input" id="up_ageRating">${ageRatingOpts}</select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Video Quality</label>
-            <select class="admin-input" id="up_quality">
-              <option value="4K UHD" ${vIs4K?'selected':''}>4K UHD</option>
-              <option value="Full HD" ${!vIs4K?'selected':''}>Full HD</option>
-              <option value="HD">HD</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-label" style="margin-bottom:8px">Feature Badges</div>
-        <div class="check-group">
-          <label class="check-chip"><input type="checkbox" id="up_isNew"  ${vIsNew ?'checked':''}/> 🆕 New ${isSeries?'Series':'Release'}</label>
-          <label class="check-chip"><input type="checkbox" id="up_hasCC"  ${vHasCC ?'checked':''}/> CC Subtitles</label>
-          <label class="check-chip"><input type="checkbox" id="up_hasAD"  ${vHasAD ?'checked':''}/> AD Audio Desc.</label>
-          <label class="check-chip"><input type="checkbox" id="up_is4K"   ${vIs4K  ?'checked':''}/> 4K UHD</label>
+        <div class="form-group">
+          <textarea class="admin-input" id="up_desc" rows="4" placeholder="Write a synopsis…" style="resize:vertical">${vDesc}</textarea>
         </div>
       </div>
 
-      <!-- ── LANGUAGES ── -->
-      <div class="upload-section">
-        <div class="upload-section-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          Languages
+      <!-- ── EPISODE MANAGER (series only) ── -->
+      <div class="up-section" id="epManagerSection" style="${showSeries?'':'display:none'}">
+        <div class="up-section-hd">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8M12 3v4"/></svg>
+          Seasons &amp; Episodes
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="form-group">
-            <label class="form-label">Audio Languages <span style="color:var(--muted);font-weight:400">(comma separated)</span></label>
-            <input class="admin-input" id="up_audio" value="${vAudio}" placeholder="Hindi, English, Tamil, Telugu"/>
-            <div style="font-size:.72rem;color:var(--muted);margin-top:4px">e.g. Hindi, English, Tamil</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Subtitle Languages <span style="color:var(--muted);font-weight:400">(comma separated)</span></label>
-            <input class="admin-input" id="up_subs" value="${vSubs}" placeholder="English, Hindi"/>
-            <div style="font-size:.72rem;color:var(--muted);margin-top:4px">e.g. English, Hindi, Tamil</div>
-          </div>
-        </div>
+        <div id="epManagerRoot"></div>
       </div>
 
-      <!-- ── SERIES-ONLY: SEASON & EPISODES ── -->
-      <div class="upload-section series-only" id="seriesSection" style="${isSeries?'display:block':'display:none'}">
-        <div class="upload-section-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8"/><path d="M12 3v4"/></svg>
-          Series &amp; Episodes
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-          <div class="form-group">
-            <label class="form-label">Season Number</label>
-            <input class="admin-input" id="up_season" type="number" value="${vSeason}" min="1" placeholder="1"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Total Episodes (auto-counted)</label>
-            <input class="admin-input" id="up_epCount" type="number" value="${vEpisodes.length||''}" placeholder="Auto" readonly style="opacity:.5;cursor:not-allowed"/>
-          </div>
-        </div>
-
-        <!-- Episode list -->
-        <div class="form-label" style="margin-bottom:10px">Episode List</div>
-        <div class="ep-list" id="epList">
-          ${vEpisodes.map((ep,i)=>buildEpCardHTML(i,ep)).join('')||'<p style="color:var(--muted);font-size:.85rem;padding:8px 0">No episodes added yet.</p>'}
-        </div>
-        <button class="btn-add-ep" onclick="addEpisode()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Episode
-        </button>
-      </div>
-
-      <!-- ── SAVE BUTTON ── -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:28px">
-        <button class="btn-submit" id="btnSubmitMovie" onclick="submitMovie()">${isEdit ? 'Update Content' : 'Save Content'}</button>
+      <!-- Save -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
+        <button class="btn-submit" id="btnSubmitMovie" onclick="submitMovie()">${isEdit?'Update Content':'Save Content'}</button>
         <button class="btn-gate-cancel" style="width:auto;margin-top:0" onclick="loadAdminMovies(document.getElementById('adminMain'))">Cancel</button>
       </div>
     </div>`;
 
-  // After render: update episode count display
-  updateEpCount();
+  if(showSeries) renderEpManager();
 }
 
-function buildEpCardHTML(index, ep = {}){
-  const n = index + 1;
-  return `<div class="ep-card" id="epCard_${index}" data-ep-index="${index}">
-    <div class="ep-card-header">
-      <span class="ep-card-num">Episode ${n}</span>
-      <button class="ep-remove-btn" onclick="removeEpisode(${index})">✕ Remove</button>
+/* ──────────────────────── type change ──────────────────────── */
+function onUpTypeChange(val){
+  const sec = document.getElementById('epManagerSection');
+  if(!sec) return;
+  if(isSType(val)){
+    sec.style.display = '';
+    if(Object.keys(adminSeasons).length === 0){ adminSeasons = {1:[]}; adminActiveSeason = 1; }
+    renderEpManager();
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+/* ──────────────────────── render season tabs + episode list ──────────────────────── */
+function renderEpManager(){
+  const root = document.getElementById('epManagerRoot');
+  if(!root) return;
+  const seasons = Object.keys(adminSeasons).map(Number).sort((a,b)=>a-b);
+  if(!seasons.includes(adminActiveSeason)) adminActiveSeason = seasons[0]||1;
+  const eps = adminSeasons[adminActiveSeason] || [];
+
+  root.innerHTML = `
+    <!-- Season Tabs -->
+    <div class="season-tabs-bar">
+      ${seasons.map(s=>`
+        <button class="season-tab-btn ${s===adminActiveSeason?'active':''}" onclick="switchAdminSeason(${s})">
+          Season ${s} <span class="stab-count">${(adminSeasons[s]||[]).length}</span>
+          ${seasons.length>1?`<span class="season-del-btn" onclick="event.stopPropagation();deleteAdminSeason(${s})" title="Remove season">✕</span>`:''}
+        </button>`).join('')}
+      <button class="season-add-btn" onclick="addAdminSeason()">+ Add Season</button>
     </div>
-    <div class="ep-grid">
-      <div class="form-group ep-full">
-        <label class="form-label">Episode Title</label>
-        <input class="admin-input ep-title" placeholder="Episode ${n} title" value="${ep.title||''}"/>
+
+    <!-- Toolbar -->
+    <div class="ep-manager-toolbar">
+      <div class="ep-manager-info">
+        Season ${adminActiveSeason} — <span>${eps.length}</span> episode${eps.length!==1?'s':''}
+        ${eps.filter(e=>e.videoUrl||e.hlsUrl).length > 0 ? ` · <span style="color:var(--green)">${eps.filter(e=>e.videoUrl||e.hlsUrl).length} with video</span>` : ''}
       </div>
-      <div class="form-group">
-        <label class="form-label">Duration (min)</label>
-        <input class="admin-input ep-duration" type="number" placeholder="45" value="${ep.duration||''}"/>
+      <button class="btn-add-episode" onclick="addEpisodeCard()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Episode
+      </button>
+    </div>
+
+    <!-- Episode List -->
+    <div class="ep-card-list" id="epCardList">
+      ${eps.length === 0 ? renderEpEmpty() : eps.map((ep,i)=>renderEpCard(ep,i,eps.length)).join('')}
+    </div>`;
+}
+
+function renderEpEmpty(){
+  return `<div class="ep-empty">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8M12 3v4"/><circle cx="12" cy="14" r="3"/></svg>
+    <p>No episodes yet for Season ${adminActiveSeason}.<br/>Click <strong>Add Episode</strong> to get started.</p>
+  </div>`;
+}
+
+function renderEpCard(ep, idx, total){
+  const hasVid = !!(ep.videoUrl||ep.hlsUrl);
+  const hasThumb = ep.thumbnailUrl && ep.thumbnailUrl.startsWith('http');
+  if(ep._editing) return renderEpEditForm(ep, idx);
+  return `<div class="ep-card" id="epcard_${ep.id}">
+    <div class="ep-drag-handle" title="Drag to reorder">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+    </div>
+    <div class="ep-thumb-wrap">
+      ${hasThumb
+        ? `<img src="${ep.thumbnailUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+           <div class="ep-thumb-placeholder" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div>`
+        : `<div class="ep-thumb-placeholder"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div>`}
+      <div class="ep-play-overlay">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(255,255,255,.85)"><path d="M8 5v14l11-7z"/></svg>
       </div>
-      <div class="form-group">
-        <label class="form-label">Episode Number</label>
-        <input class="admin-input ep-number" type="number" placeholder="${n}" value="${ep.episodeNumber||n}"/>
+      <div class="ep-status-dot ${hasVid?'has-video':'no-video'}" title="${hasVid?'Video available':'No video'}"></div>
+    </div>
+    <div class="ep-meta">
+      <div class="ep-meta-top">
+        <span class="ep-num-badge">EP ${ep.episodeNumber||idx+1}</span>
+        ${ep.duration?`<span class="ep-dur-badge">${ep.duration} min</span>`:''}
+        ${ep.airDate?`<span class="ep-dur-badge">${ep.airDate}</span>`:''}
+        <span class="ep-vid-badge ${hasVid?'ok':'missing'}">${hasVid?'✓ Video':'✗ No Video'}</span>
       </div>
-      <div class="form-group ep-full">
-        <label class="form-label">Video URL (MP4 or .m3u8)</label>
-        <input class="admin-input ep-video" placeholder="https://…" value="${ep.videoUrl||ep.hlsUrl||''}"/>
+      <div class="ep-title-text">${ep.title || 'Untitled Episode'}</div>
+      ${ep.description?`<div class="ep-desc-text">${ep.description}</div>`:''}
+    </div>
+    <div class="ep-actions">
+      <div class="ep-move-btns">
+        <button class="ep-move-btn" onclick="moveEp('${ep.id}',-1)" ${idx===0?'disabled':''} title="Move up">▲</button>
+        <button class="ep-move-btn" onclick="moveEp('${ep.id}',1)"  ${idx===total-1?'disabled':''} title="Move down">▼</button>
       </div>
-      <div class="form-group ep-full">
-        <label class="form-label">Episode Description</label>
-        <textarea class="admin-input ep-desc" placeholder="Short description…" rows="2" style="resize:vertical">${ep.description||''}</textarea>
-      </div>
+      <button class="ep-act-btn edit-btn" onclick="startEditEp('${ep.id}')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <span>Edit</span>
+      </button>
+      <button class="ep-act-btn del-btn" onclick="deleteEp('${ep.id}')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        <span>Delete</span>
+      </button>
     </div>
   </div>`;
 }
 
-function onAdminTypeChange(val){
-  const sec = document.getElementById('seriesSection');
-  if(!sec) return;
-  const isSeries = val==='series'||val==='original';
-  sec.style.display = isSeries ? 'block' : 'none';
-  // update "New Series" vs "New Release" label
-  const newChip = document.querySelector('#up_isNew')?.closest('.check-chip');
-  if(newChip){ newChip.childNodes[newChip.childNodes.length-1].textContent = ' 🆕 New '+(isSeries?'Series':'Release'); }
+function renderEpEditForm(ep, idx){
+  return `<div class="ep-card editing" id="epcard_${ep.id}">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span style="font-size:.75rem;font-weight:700;letter-spacing:1px;color:var(--cyan);text-transform:uppercase">
+        ${ep.id.startsWith('ep_new') ? '➕ New Episode' : '✏️ Edit Episode ' + (ep.episodeNumber||idx+1)}
+      </span>
+      <button class="ep-act-btn" onclick="cancelEditEp('${ep.id}')" style="padding:4px 12px">✕ Cancel</button>
+    </div>
+    <div class="ep-edit-form">
+      <div class="form-group">
+        <label class="form-label">Episode Number *</label>
+        <input class="admin-input ep-f-num" type="number" min="1" value="${ep.episodeNumber||idx+1}" placeholder="${idx+1}"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duration (minutes)</label>
+        <input class="admin-input ep-f-dur" type="number" value="${ep.duration||''}" placeholder="45"/>
+      </div>
+      <div class="form-group span2">
+        <label class="form-label">Episode Title *</label>
+        <input class="admin-input ep-f-title" value="${ep.title||''}" placeholder="Episode title…"/>
+      </div>
+      <div class="form-group span2">
+        <label class="form-label">Description</label>
+        <textarea class="admin-input ep-f-desc" rows="2" placeholder="Short episode synopsis…" style="resize:vertical">${ep.description||''}</textarea>
+      </div>
+      <div class="form-group span2">
+        <label class="form-label">Thumbnail URL</label>
+        <input class="admin-input ep-f-thumb" value="${ep.thumbnailUrl||''}" placeholder="https://…/ep-thumbnail.jpg" oninput="upPreviewInline(this)"/>
+        <img class="img-thumb ${ep.thumbnailUrl?'show':''}" style="width:96px;height:54px;margin-top:6px" src="${ep.thumbnailUrl||''}" alt="" id="epThumbPrev_${ep.id}"/>
+      </div>
+      <div class="form-group span2">
+        <label class="form-label">Video URL (MP4 or .m3u8) *</label>
+        <input class="admin-input ep-f-video" value="${ep.videoUrl||ep.hlsUrl||''}" placeholder="https://…/episode.mp4"/>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px">Paste a direct MP4 link or .m3u8 HLS stream URL</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Air Date</label>
+        <input class="admin-input ep-f-air" type="date" value="${ep.airDate||''}"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Season</label>
+        <input class="admin-input ep-f-season" type="number" min="1" value="${adminActiveSeason}" readonly style="opacity:.6"/>
+      </div>
+    </div>
+    <div class="ep-edit-actions">
+      <button class="btn-ep-save" onclick="saveEp('${ep.id}')">✓ Save Episode</button>
+      <button class="btn-ep-cancel" onclick="cancelEditEp('${ep.id}')">Cancel</button>
+    </div>
+  </div>`;
 }
 
-function addEpisode(){
-  const list = document.getElementById('epList');
-  if(!list) return;
-  // clear the "no episodes" placeholder if present
-  const placeholder = list.querySelector('p');
-  if(placeholder) placeholder.remove();
-  const idx = list.querySelectorAll('.ep-card').length;
-  list.insertAdjacentHTML('beforeend', buildEpCardHTML(idx));
-  updateEpCount();
+/* ──────────────────────── season actions ──────────────────────── */
+function switchAdminSeason(n){
+  adminActiveSeason = n;
+  renderEpManager();
 }
 
-function removeEpisode(idx){
-  const card = document.getElementById('epCard_'+idx);
-  if(card) card.remove();
-  // Re-index remaining cards
-  const list = document.getElementById('epList');
-  if(!list) return;
-  list.querySelectorAll('.ep-card').forEach((c,i)=>{
-    c.id = 'epCard_'+i;
-    c.dataset.epIndex = i;
-    c.querySelector('.ep-card-num').textContent = 'Episode '+(i+1);
-    c.querySelector('.ep-remove-btn').setAttribute('onclick','removeEpisode('+i+')');
-    const numInput = c.querySelector('.ep-number');
-    if(numInput && !numInput.value) numInput.placeholder = String(i+1);
-  });
-  if(list.querySelectorAll('.ep-card').length===0){
-    list.innerHTML='<p style="color:var(--muted);font-size:.85rem;padding:8px 0">No episodes added yet.</p>';
-  }
-  updateEpCount();
+function addAdminSeason(){
+  const nums = Object.keys(adminSeasons).map(Number);
+  const next = nums.length ? Math.max(...nums)+1 : 1;
+  adminSeasons[next] = [];
+  adminActiveSeason = next;
+  renderEpManager();
+  showToast('Season '+next+' created','success');
 }
 
-function updateEpCount(){
-  const list = document.getElementById('epList');
-  const countEl = document.getElementById('up_epCount');
-  if(!list||!countEl) return;
-  countEl.value = list.querySelectorAll('.ep-card').length || '';
+function deleteAdminSeason(n){
+  const nums = Object.keys(adminSeasons).map(Number);
+  if(nums.length <= 1){ showToast('Cannot remove the last season.','error'); return; }
+  if(!confirm('Delete Season '+n+' and all its '+((adminSeasons[n]||[]).length)+' episodes?')) return;
+  delete adminSeasons[n];
+  adminActiveSeason = Math.min(...Object.keys(adminSeasons).map(Number));
+  renderEpManager();
+  showToast('Season '+n+' removed','info');
 }
 
-function collectEpisodes(){
-  const cards = document.querySelectorAll('#epList .ep-card');
-  return Array.from(cards).map((c,i)=>({
-    episodeNumber: parseInt(c.querySelector('.ep-number')?.value)||i+1,
-    title:       (c.querySelector('.ep-title')?.value||'').trim() || 'Episode '+(i+1),
-    description: (c.querySelector('.ep-desc')?.value||'').trim(),
-    duration:    c.querySelector('.ep-duration')?.value ? parseInt(c.querySelector('.ep-duration').value) : null,
-    videoUrl:    (c.querySelector('.ep-video')?.value||'').trim(),
-    hlsUrl:      (c.querySelector('.ep-video')?.value||'').includes('.m3u8') ? (c.querySelector('.ep-video')?.value||'').trim() : ''
-  }));
+/* ──────────────────────── episode CRUD ──────────────────────── */
+function addEpisodeCard(){
+  const eps = adminSeasons[adminActiveSeason] = adminSeasons[adminActiveSeason]||[];
+  const newEp = { id:'ep_new_'+epId(), episodeNumber: eps.length+1, title:'', description:'', thumbnailUrl:'', videoUrl:'', hlsUrl:'', duration:'', airDate:'', _editing:true };
+  eps.push(newEp);
+  renderEpManager();
+  // Scroll to bottom of list
+  setTimeout(()=>{ const l=document.getElementById('epCardList'); if(l) l.lastElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
 }
 
-function previewImg(inputId, previewId){
-  const url = document.getElementById(inputId)?.value?.trim();
+function startEditEp(id){
+  const eps = adminSeasons[adminActiveSeason]||[];
+  const ep = eps.find(e=>e.id===id);
+  if(ep){ ep._editing=true; renderEpManager(); }
+}
+
+function cancelEditEp(id){
+  const eps = adminSeasons[adminActiveSeason]||[];
+  const idx = eps.findIndex(e=>e.id===id);
+  if(idx===-1) return;
+  // If it was a brand-new unsaved ep, remove it
+  if(eps[idx].id.startsWith('ep_new')) eps.splice(idx,1);
+  else eps[idx]._editing = false;
+  renderEpManager();
+}
+
+function saveEp(id){
+  const card = document.getElementById('epcard_'+id);
+  if(!card){ showToast('Episode card not found','error'); return; }
+  const num   = parseInt(card.querySelector('.ep-f-num')?.value)||1;
+  const title = card.querySelector('.ep-f-title')?.value?.trim()||'';
+  const desc  = card.querySelector('.ep-f-desc')?.value?.trim()||'';
+  const thumb = card.querySelector('.ep-f-thumb')?.value?.trim()||'';
+  const video = card.querySelector('.ep-f-video')?.value?.trim()||'';
+  const dur   = card.querySelector('.ep-f-dur')?.value?parseInt(card.querySelector('.ep-f-dur').value):null;
+  const air   = card.querySelector('.ep-f-air')?.value||'';
+  if(!title){ showToast('Episode title is required.','error'); card.querySelector('.ep-f-title').focus(); return; }
+  const eps = adminSeasons[adminActiveSeason]||[];
+  const ep = eps.find(e=>e.id===id);
+  if(!ep){ showToast('Episode not found','error'); return; }
+  // Commit
+  ep.episodeNumber = num;
+  ep.title         = title;
+  ep.description   = desc;
+  ep.thumbnailUrl  = thumb;
+  ep.videoUrl      = video.includes('.m3u8') ? '' : video;
+  ep.hlsUrl        = video.includes('.m3u8') ? video : '';
+  ep.duration      = dur;
+  ep.airDate       = air;
+  ep._editing      = false;
+  // Fix "ep_new" id to permanent
+  if(ep.id.startsWith('ep_new')) ep.id = epId();
+  renderEpManager();
+  showToast('"'+title+'" saved!','success');
+}
+
+function deleteEp(id){
+  const eps = adminSeasons[adminActiveSeason]||[];
+  const ep = eps.find(e=>e.id===id);
+  if(!ep) return;
+  if(!confirm('Delete episode "'+(ep.title||'this episode')+'"?')) return;
+  adminSeasons[adminActiveSeason] = eps.filter(e=>e.id!==id);
+  renderEpManager();
+  showToast('Episode deleted','info');
+}
+
+function moveEp(id, dir){
+  const eps = adminSeasons[adminActiveSeason]||[];
+  const idx = eps.findIndex(e=>e.id===id);
+  const target = idx+dir;
+  if(target<0||target>=eps.length) return;
+  [eps[idx],eps[target]] = [eps[target],eps[idx]];
+  renderEpManager();
+}
+
+/* ──────────────────────── image preview helpers ──────────────────────── */
+function upPreview(input, previewId){
   const img = document.getElementById(previewId);
   if(!img) return;
-  if(url&&url.startsWith('http')){ img.src=url; img.classList.add('show'); }
-  else{ img.classList.remove('show'); }
+  const url = input.value.trim();
+  if(url.startsWith('http')){ img.src=url; img.classList.add('show'); }
+  else img.classList.remove('show');
 }
 
+function upPreviewInline(input){
+  const url = input.value.trim();
+  const img = input.closest('.ep-card')?.querySelector('img[id^="epThumbPrev"]');
+  if(!img) return;
+  if(url.startsWith('http')){ img.src=url; img.classList.add('show'); }
+  else img.classList.remove('show');
+}
+
+/* ──────────────────────── collect all episodes for payload ──────────────────────── */
+function collectAllEpisodes(){
+  const all = [];
+  Object.keys(adminSeasons).sort((a,b)=>Number(a)-Number(b)).forEach(s=>{
+    (adminSeasons[s]||[]).forEach(ep=>{
+      if(ep._editing) return; // skip unsaved drafts
+      all.push({
+        season:        Number(s),
+        episodeNumber: ep.episodeNumber,
+        title:         ep.title,
+        description:   ep.description,
+        thumbnailUrl:  ep.thumbnailUrl,
+        videoUrl:      ep.videoUrl,
+        hlsUrl:        ep.hlsUrl,
+        duration:      ep.duration,
+        airDate:       ep.airDate
+      });
+    });
+  });
+  return all;
+}
+
+/* ──────────────────────── submit ──────────────────────── */
 async function submitMovie(){
-  const btn=document.getElementById('btnSubmitMovie');
-  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  const btn = document.getElementById('btnSubmitMovie');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
   const genresRaw = document.getElementById('up_genres')?.value||'';
-  const audioRaw  = document.getElementById('up_audio')?.value||'';
-  const subsRaw   = document.getElementById('up_subs')?.value||'';
-  const episodes  = collectEpisodes();
-  const payload={
+  const type      = document.getElementById('up_type')?.value||'movie';
+  const episodes  = isSType(type) ? collectAllEpisodes() : [];
+  const payload = {
     title:       document.getElementById('up_title').value.trim(),
-    type:        document.getElementById('up_type').value,
-    releaseYear: document.getElementById('up_year').value ? parseInt(document.getElementById('up_year').value) : null,
+    type,
+    releaseYear: document.getElementById('up_year').value   ? parseInt(document.getElementById('up_year').value)    : null,
     genres:      genresRaw.split(',').map(g=>g.trim()).filter(Boolean),
     rating:      document.getElementById('up_rating').value.trim() ? parseFloat(document.getElementById('up_rating').value) : null,
     duration:    document.getElementById('up_duration').value ? parseInt(document.getElementById('up_duration').value) : null,
@@ -1952,34 +2140,28 @@ async function submitMovie(){
     videoUrl:    document.getElementById('up_video').value.trim(),
     hlsUrl:      document.getElementById('up_hls').value.trim(),
     description: document.getElementById('up_desc').value.trim(),
-    // New fields
-    ageRating:        document.getElementById('up_ageRating')?.value || 'U/A 16+',
-    videoQuality:     document.getElementById('up_quality')?.value   || '4K UHD',
-    isNew:            document.getElementById('up_isNew')?.checked    ?? true,
-    hasCC:            document.getElementById('up_hasCC')?.checked    ?? false,
-    hasAD:            document.getElementById('up_hasAD')?.checked    ?? false,
-    is4K:             document.getElementById('up_is4K')?.checked     ?? true,
-    audioLanguages:   audioRaw.split(',').map(s=>s.trim()).filter(Boolean),
-    subtitleLanguages:subsRaw.split(',').map(s=>s.trim()).filter(Boolean),
-    seasonNumber:     document.getElementById('up_season')?.value ? parseInt(document.getElementById('up_season').value) : 1,
-    episodes:         episodes,
-    episodeCount:     episodes.length || (document.getElementById('up_epCount')?.value ? parseInt(document.getElementById('up_epCount').value) : null)
+    episodes,
+    episodeCount: episodes.length || null,
+    seasonCount:  isSType(type) ? Object.keys(adminSeasons).length : null
   };
-  if(!payload.title){showToast('Title is required.','error');if(btn){btn.disabled=false;btn.textContent='Save Content';}return;}
+  if(!payload.title){ showToast('Title is required.','error'); if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';} return; }
+  // Warn about unsaved episode edits
+  const hasDraft = Object.values(adminSeasons).some(arr=>arr.some(e=>e._editing));
+  if(hasDraft){ showToast('You have unsaved episode edits. Save or cancel them first.','error'); if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';} return; }
   try{
     if(state.editingMovieId){
       await api('/movies/'+state.editingMovieId,{method:'PUT',body:JSON.stringify(payload)});
-      showToast('"'+payload.title+'" updated successfully!','success');
+      showToast('"'+payload.title+'" updated!','success');
     } else {
       await api('/movies',{method:'POST',body:JSON.stringify(payload)});
-      showToast('"'+payload.title+'" saved successfully!','success');
+      showToast('"'+payload.title+'" saved!','success');
     }
     state.editingMovieId = null;
     closeAdmin();
     await refreshHomeData();
     window.scrollTo({top:0,behavior:'smooth'});
-    showToast('Changes are now live on the platform!','success');
-  }catch(e){showToast(e.message,'error');if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';}}
+    showToast('Changes are now live!','success');
+  }catch(e){ showToast(e.message,'error'); if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';} }
 }
 
 async function refreshHomeData(){
