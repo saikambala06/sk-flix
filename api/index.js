@@ -123,18 +123,36 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, default: 'user', enum: ['user', 'admin'] }
 }, { timestamps: true });
 
+const EpisodeSchema = new mongoose.Schema({
+  season:        { type: Number, default: 1 },
+  episodeNumber: { type: Number },
+  title:         { type: String },
+  description:   { type: String },
+  thumbnailUrl:  { type: String },
+  videoUrl:      { type: String },
+  hlsUrl:        { type: String },
+  duration:      { type: Number },
+  airDate:       { type: String }
+}, { _id: false });
+
 const MovieSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  type: { type: String, enum: ['movie', 'series', 'original'], default: 'movie' },
-  releaseYear: { type: Number },
-  rating: { type: String },
-  genres: [String],
-  description: { type: String },
-  posterUrl: { type: String },
-  backdropUrl: { type: String },
-  hlsUrl: { type: String },
-  videoUrl: { type: String },
-  isPublished: { type: Boolean, default: true }
+  title:             { type: String, required: true },
+  type:              { type: String, enum: ['movie', 'series', 'original'], default: 'movie' },
+  releaseYear:       { type: Number },
+  rating:            { type: String },
+  genres:            [String],
+  description:       { type: String },
+  posterUrl:         { type: String },
+  backdropUrl:       { type: String },
+  hlsUrl:            { type: String },
+  videoUrl:          { type: String },
+  duration:          { type: Number },
+  episodes:          [EpisodeSchema],
+  episodeCount:      { type: Number },
+  seasonCount:       { type: Number },
+  audioLanguages:    [String],
+  subtitleLanguages: [String],
+  isPublished:       { type: Boolean, default: true }
 }, { timestamps: true });
 
 // Use existing model if already compiled (prevents OverwriteModelError in serverless)
@@ -425,8 +443,7 @@ app.put('/api/admin/users/:id', async (req, res) => {
       req.params.id,
       { role },
       { new: true }
-      .select('-password')
-    ).lean();
+    ).select('-password').lean();
 
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
