@@ -229,9 +229,9 @@ img{display:block;max-width:100%}
 .detail-overlay-prime.closing{opacity:0;transform:translateY(32px);pointer-events:none;}
 .prime-detail-wrap{max-width:780px;margin:0 auto;width:100%;padding:0 0 80px;}
 /* poster / backdrop top area */
-.prime-backdrop{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#000;flex-shrink:0;}
-.prime-backdrop img{display:none!important;}
-.prime-backdrop-grad{position:absolute;inset:0;background:#000;}
+.prime-backdrop{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#111;flex-shrink:0;}
+.prime-backdrop img{width:100%;height:100%;object-fit:cover;object-position:center top;}
+.prime-backdrop-grad{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,10,18,0) 30%,rgba(10,10,18,1) 100%);}
 .prime-back-btn{position:absolute;top:16px;left:16px;z-index:10;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border:none;color:#fff;width:42px;height:42px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:background .2s, transform .25s cubic-bezier(0.4,0,0.2,1), box-shadow .2s;}
 .prime-back-btn:hover{background:rgba(255,255,255,.18);transform:translateX(-3px) scale(1.08);box-shadow:0 4px 16px rgba(0,0,0,.5);}
 /* body content */
@@ -2565,167 +2565,15 @@ window.addEventListener('scroll',()=>{document.getElementById('navbar').classLis
 document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('open');document.getElementById('navLinks').classList.toggle('open');});
 document.querySelectorAll('#navLinks a').forEach(a=>{a.addEventListener('click',()=>{document.getElementById('hamburger').classList.remove('open');document.getElementById('navLinks').classList.remove('open');});});
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'||e.key==='GoBack'||e.keyCode===27||e.keyCode===10009){
-    if(document.getElementById('playerOverlay').classList.contains('active'))  { closePlayer();   return; }
-    if(document.getElementById('detailOverlay').classList.contains('active'))  { closeDetail();   return; }
-    if(document.getElementById('adminOverlay').classList.contains('active'))   { closeAdmin();    return; }
-    if(document.getElementById('searchOverlay').classList.contains('active'))  { closeSearch();   return; }
-    if(document.getElementById('wishlistOverlay').classList.contains('active')){ closeWishlist(); return; }
-    if(document.getElementById('authOverlay').classList.contains('active'))    { closeAuth();     return; }
-    return;
-  }
-  // TV Remote / D-pad navigation
-  tvRemoteNav(e);
+  if(e.key!=='Escape') return;
+  // Close only the topmost open overlay, one at a time
+  if(document.getElementById('playerOverlay').classList.contains('active'))  { closePlayer();   return; }
+  if(document.getElementById('detailOverlay').classList.contains('active'))  { closeDetail();   return; }
+  if(document.getElementById('adminOverlay').classList.contains('active'))   { closeAdmin();    return; }
+  if(document.getElementById('searchOverlay').classList.contains('active'))  { closeSearch();   return; }
+  if(document.getElementById('wishlistOverlay').classList.contains('active')){ closeWishlist(); return; }
+  if(document.getElementById('authOverlay').classList.contains('active'))    { closeAuth();     return; }
 });
-
-// ═══ TV / Android Remote / Google TV D-pad Navigation ═══
-const TV_KEYS={
-  UP:[38,'ArrowUp'],DOWN:[40,'ArrowDown'],LEFT:[37,'ArrowLeft'],RIGHT:[39,'ArrowRight'],
-  SELECT:[13,'Enter',32,' '],PLAY_PAUSE:[415,'MediaPlayPause',179],
-  REWIND:[412,'MediaRewind'],FAST_FWD:[417,'MediaFastForward'],
-  BACK:[27,'Escape','GoBack',10009],MEDIA_STOP:[413]
-};
-function tvKeyIs(e,action){
-  const keys=TV_KEYS[action];
-  return keys&&(keys.includes(e.key)||keys.includes(e.keyCode));
-}
-
-let tvFocusables=[];let tvFocusIdx=0;
-function getTvFocusables(){
-  // Get all focusable interactive elements that are currently visible
-  return Array.from(document.querySelectorAll(
-    'button:not([disabled]):not([style*="display:none"]):not([style*="display: none"]), '+
-    '[tabindex]:not([disabled]):not([style*="display:none"]), '+
-    'a[href], input:not([disabled])'
-  )).filter(el=>{
-    const rect=el.getBoundingClientRect();
-    const style=window.getComputedStyle(el);
-    return rect.width>0&&rect.height>0&&style.visibility!=='hidden'&&style.display!=='none'&&style.opacity!=='0';
-  });
-}
-
-function tvRemoteNav(e){
-  const isPlayer=document.getElementById('playerOverlay').classList.contains('active');
-  const isDetail=document.getElementById('detailOverlay').classList.contains('active');
-
-  // Player-specific controls
-  if(isPlayer){
-    if(tvKeyIs(e,'SELECT')||tvKeyIs(e,'PLAY_PAUSE')){e.preventDefault();togglePlay();showPlayerControls();return;}
-    if(tvKeyIs(e,'REWIND')){e.preventDefault();skipVideo(-10);showPlayerControls();return;}
-    if(tvKeyIs(e,'FAST_FWD')){e.preventDefault();skipVideo(10);showPlayerControls();return;}
-    if(tvKeyIs(e,'LEFT')){e.preventDefault();skipVideo(-10);showPlayerControls();return;}
-    if(tvKeyIs(e,'RIGHT')){e.preventDefault();skipVideo(10);showPlayerControls();return;}
-    if(tvKeyIs(e,'UP')){e.preventDefault();const v=document.getElementById('videoPlayer');if(v)v.volume=Math.min(1,v.volume+0.1);showPlayerControls();return;}
-    if(tvKeyIs(e,'DOWN')){e.preventDefault();const v=document.getElementById('videoPlayer');if(v)v.volume=Math.max(0,v.volume-0.1);showPlayerControls();return;}
-    return;
-  }
-
-  // D-pad spatial navigation for all other screens
-  if(tvKeyIs(e,'SELECT')){
-    const focused=document.activeElement;
-    if(focused&&focused!==document.body){e.preventDefault();focused.click();return;}
-    // If nothing focused, focus first interactive element
-    tvFocusFirst();return;
-  }
-  if(tvKeyIs(e,'UP')||tvKeyIs(e,'DOWN')||tvKeyIs(e,'LEFT')||tvKeyIs(e,'RIGHT')){
-    e.preventDefault();
-    tvSpatialMove(e.key||String.fromCharCode(e.keyCode));
-    return;
-  }
-}
-
-function tvFocusFirst(){
-  const els=getTvFocusables();
-  if(els.length){els[0].focus();tvFocusIdx=0;}
-}
-
-function tvSpatialMove(key){
-  const focused=document.activeElement;
-  const els=getTvFocusables();
-  if(!els.length)return;
-  if(!focused||focused===document.body){els[0].focus();return;}
-  const fRect=focused.getBoundingClientRect();
-  const cx=fRect.left+fRect.width/2;
-  const cy=fRect.top+fRect.height/2;
-  let best=null,bestScore=Infinity;
-  for(const el of els){
-    if(el===focused)continue;
-    const r=el.getBoundingClientRect();
-    const ecx=r.left+r.width/2;
-    const ecy=r.top+r.height/2;
-    const dx=ecx-cx,dy=ecy-cy;
-    let inDir=false,primary=0,secondary=0;
-    if(key==='ArrowUp'||key==='38')   {inDir=dy<-8;primary=-dy;secondary=Math.abs(dx);}
-    if(key==='ArrowDown'||key==='40') {inDir=dy>8; primary=dy; secondary=Math.abs(dx);}
-    if(key==='ArrowLeft'||key==='37') {inDir=dx<-8;primary=-dx;secondary=Math.abs(dy);}
-    if(key==='ArrowRight'||key==='39'){inDir=dx>8; primary=dx; secondary=Math.abs(dy);}
-    if(!inDir)continue;
-    const score=secondary*2+primary*0.5;
-    if(score<bestScore){bestScore=score;best=el;}
-  }
-  if(best){best.focus();best.scrollIntoView({behavior:'smooth',block:'nearest'});}
-}
-
-function showPlayerControls(){
-  const ui=document.getElementById('playerUI');
-  if(!ui)return;
-  ui.classList.remove('idle');
-  clearTimeout(window._tvIdleTimer);
-  window._tvIdleTimer=setTimeout(()=>{if(!document.getElementById('videoPlayer').paused)ui.classList.add('idle');},4000);
-}
-
-// Make all buttons and cards focusable for TV navigation
-function initTvFocus(){
-  // Add tabindex to card rows for TV scrolling
-  document.querySelectorAll('.movie-card,.genre-card,.ep-card,.prime-ep-item').forEach(el=>{
-    if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
-    el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.keyCode===13){ev.preventDefault();el.click();}});
-  });
-  // Focus hero play button on TV by default
-  const heroPlay=document.getElementById('heroPlay');
-  if(heroPlay&&!heroPlay.disabled)setTimeout(()=>{try{heroPlay.focus();}catch(ex){}},800);
-}
-
-// TV-specific CSS additions
-(()=>{
-  const s=document.createElement('style');
-  s.textContent=`
-    /* Google TV / Android TV focus styles */
-    *:focus{outline:3px solid var(--gold)!important;outline-offset:3px!important;}
-    .movie-card:focus,
-    .genre-card:focus,
-    .ep-card:focus,
-    .prime-ep-item:focus{
-      outline:3px solid var(--gold)!important;
-      transform:scale(1.08) translateY(-4px)!important;
-      box-shadow:0 0 0 3px var(--gold),0 20px 50px rgba(0,0,0,.7)!important;
-      z-index:50!important;
-    }
-    button:focus,
-    [tabindex]:focus{
-      outline:3px solid var(--gold)!important;
-      outline-offset:2px!important;
-    }
-    .ctrl-btn:focus{
-      outline:3px solid var(--gold)!important;
-      color:var(--gold)!important;
-      transform:scale(1.2)!important;
-    }
-    /* Android TV - hide scrollbars, use D-pad for card rows */
-    @media (hover:none) and (pointer:coarse){
-      .card-row{scroll-snap-type:x mandatory}
-      .movie-card{scroll-snap-align:start}
-    }
-    /* Larger touch targets on TV/Android */
-    @media (min-width:1280px) and (hover:none){
-      .ctrl-btn{width:56px!important;height:56px!important}
-      .ctrl-btn svg{width:32px!important;height:32px!important}
-      .btn-play,.btn-info,.btn-wishlist{padding:18px 36px!important;font-size:1.1rem!important}
-      .movie-card{width:clamp(160px,18vw,240px)!important}
-    }
-  `;
-  document.head.appendChild(s);
-})();
 
 // ═══ Init ═══
 async function init(){
@@ -2748,7 +2596,6 @@ async function init(){
   populateRow(document.getElementById('originalsRow'),originals,'No originals yet.');
   renderGenreGrid();
   document.getElementById('loadingScreen').classList.add('hidden');
-  initTvFocus();
 }
 init();
 </script>
