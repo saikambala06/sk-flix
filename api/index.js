@@ -483,3 +483,42 @@ app.get('/api/health', (req, res) => {
 
 // Export for Vercel Serverless
 module.exports = app;
+
+
+// ===== FIX: Scroll lock =====
+function openDetailOverlay(){
+  const overlay = document.querySelector(".detail-overlay-prime");
+  overlay.classList.add("active");
+  document.body.classList.add("no-scroll");
+}
+
+function closeDetailOverlay(){
+  const overlay = document.querySelector(".detail-overlay-prime");
+  overlay.classList.remove("active");
+  document.body.classList.remove("no-scroll");
+}
+
+// Prevent touch scroll bleed
+const overlayEl = document.querySelector(".detail-overlay-prime");
+if(overlayEl){
+  overlayEl.addEventListener("touchmove", e => e.stopPropagation(), {passive:false});
+}
+
+// ===== FIX: Fullscreen landscape =====
+function goFullScreen(video){
+  if (video.requestFullscreen) video.requestFullscreen();
+  if (screen.orientation && screen.orientation.lock){
+    screen.orientation.lock("landscape").catch(()=>{});
+  }
+  video.style.width = "100vw";
+  video.style.height = "100vh";
+  video.style.objectFit = "contain";
+}
+
+document.addEventListener("fullscreenchange", ()=>{
+  if(!document.fullscreenElement){
+    if(screen.orientation && screen.orientation.unlock){
+      screen.orientation.unlock();
+    }
+  }
+});
