@@ -8,13 +8,5 @@
     { "src": "/api/(.*)", "dest": "/api/index.js" },
     { "src": "/(.*)", "dest": "/public/$1" },
     { "src": "/", "dest": "/public/index.html" }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 10
-    }
-  }
+  ]
 }
