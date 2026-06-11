@@ -329,7 +329,7 @@ img{display:block;max-width:100%}
 .prime-ep-sub{font-size:.75rem;color:var(--muted);}
 .prime-ep-item .prime-ep-more{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:1.1rem;}
 
-/* ── More Like This / More Details tabs ── */
+/* ── More Like This tab ── */
 .prime-bottom-tabs{display:flex;border-bottom:2px solid rgba(255,255,255,.08);margin:24px 0 0;}
 .prime-bottom-tab{flex:1;background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;padding:12px 8px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s;text-align:center;}
 .prime-bottom-tab.active{color:var(--text);border-bottom-color:var(--red);}
@@ -918,7 +918,6 @@ body.blur-bg #home-screen {
 <div class="player-overlay" id="playerOverlay">
   <div class="video-wrap" id="videoWrap">
     <video id="videoPlayer" playsinline></video>
-    <!-- Skeleton + spinner shown while video loads -->
     <div class="video-skeleton" id="videoSkeleton">
       <div class="video-skeleton-spinner"></div>
       <div class="video-skeleton-bars">
@@ -1566,10 +1565,8 @@ ${(()=>{
       </div>`:`
       `}
 
-      <!-- More Like This / More Details bottom tabs (Netflix/Prime style) -->
       <div class="prime-bottom-tabs">
-        <button class="prime-bottom-tab active" id="mltTab" onclick="switchBottomTab('mlt')">More Like This</button>
-        <button class="prime-bottom-tab" id="moreDetailsTab" onclick="switchBottomTab('moreDetails')">More Details</button>
+        <button class="prime-bottom-tab active" id="mltTab" style="cursor:default; pointer-events:none;">More Like This</button>
       </div>
       <div id="primeBottomContent">
         <div class="prime-more-like-this" id="moreLikeThisContent">
@@ -1728,19 +1725,6 @@ function buildMoreLikeThis(movie){
       </div>
     </div>`;
   }).join('')+`</div>`;
-}
-
-function switchBottomTab(tab){
-  document.getElementById('mltTab').classList.toggle('active',tab==='mlt');
-  document.getElementById('moreDetailsTab').classList.toggle('active',tab==='moreDetails');
-  const content=document.getElementById('primeBottomContent');
-  if(!content)return;
-  const movie=state.currentMovie;
-  if(tab==='mlt'){
-    content.innerHTML=`<div class="prime-more-like-this">${buildMoreLikeThis(movie)}</div>`;
-  } else {
-    content.innerHTML=`<div class="prime-more-details-tab">${buildMovieDetails(movie)}</div>`;
-  }
 }
 
 function closeDetail(){
@@ -2097,6 +2081,7 @@ function openContinueWatching(id){
   const item=_getContinueList().find(x=>x.id===id);
   const movie=state.allContent.find(m=>m._id===id);
   if(!movie){ showToast('Content not found in library','error'); return; }
+  state.currentMovie = movie; // Fix applied
   state._resumeTime=item?item.currentTime:0;
   openPlayer(movie);
 }
@@ -2248,7 +2233,6 @@ async function loadAdminDashboard(){
       <p style="color:var(--muted);font-size:.88rem">Use the sidebar to manage content or upload new movies and series.</p>`;
   }catch(e){main.innerHTML=`<div class="admin-header"><h1>Dashboard</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div><div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminDashboard()">Try Again</button></div>`;}
 }
-
 async function loadAdminMovies(main,searchQuery=''){
   main.innerHTML='<p style="color:var(--muted)">Loading content…</p>';
   try{
@@ -2908,3 +2892,4 @@ body.blur-bg #home-screen {
 }
 
 </style>
+
