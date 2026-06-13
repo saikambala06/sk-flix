@@ -329,7 +329,7 @@ img{display:block;max-width:100%}
 .prime-ep-sub{font-size:.75rem;color:var(--muted);}
 .prime-ep-item .prime-ep-more{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:1.1rem;}
 
-/* ── More Like This tab ── */
+/* ── More Like This / More Details tabs ── */
 .prime-bottom-tabs{display:flex;border-bottom:2px solid rgba(255,255,255,.08);margin:24px 0 0;}
 .prime-bottom-tab{flex:1;background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;padding:12px 8px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s;text-align:center;}
 .prime-bottom-tab.active{color:var(--text);border-bottom-color:var(--red);}
@@ -357,6 +357,36 @@ img{display:block;max-width:100%}
 .modal-actions{display:none!important;}
 .modal-play{display:none!important;}
 .modal-wish{display:none!important;}
+
+/* ── User App Season Tabs ── */
+.user-season-tabs {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin: 16px 0;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.user-season-tabs::-webkit-scrollbar { display: none; }
+.user-season-tab {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 8px 4px;
+  margin-bottom: -1px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.user-season-tab.active { color: var(--text); border-bottom-color: var(--cyan); }
+.user-season-container { display: none; }
+.user-season-container.active { display: block; }
+
 @media(max-width:480px){
   .prime-title{font-size:clamp(1.7rem,9vw,2.2rem);}
   .prime-body{padding:0 16px;}
@@ -791,7 +821,7 @@ body.blur-bg #home-screen {
 
   <section class="row-section" id="moviesSection">
     <div class="row-header">
-      <h2 id="trendingTitle">Latest - Movies</h2>
+      <h2 id="trendingTitle">Trending Now</h2>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
         <div class="genre-filter-active" id="genreFilterActive">
           <span class="genre-filter-tag" id="genreFilterTag"></span>
@@ -805,7 +835,7 @@ body.blur-bg #home-screen {
 
   <section class="row-section" id="seriesSection">
     <div class="row-header">
-      <h2>Top Rated - Series</h2>
+      <h2>Top Rated Series</h2>
       <button class="see-all" onclick="navTo('series')">See All →</button>
     </div>
     <div class="card-row" id="seriesRow"></div>
@@ -813,14 +843,14 @@ body.blur-bg #home-screen {
 
   <section class="row-section" id="originalsSection">
     <div class="row-header">
-      <h2><span class="original-dot">●</span> SkFlip -  Originals</h2>
+      <h2><span class="original-dot">●</span> SkFlip Originals</h2>
       <button class="see-all" onclick="navTo('originals')">See All →</button>
     </div>
     <div class="card-row" id="originalsRow"></div>
   </section>
 
   <section class="genres-section" id="genresSection">
-    <h2 class="section-title">Browse  by  Genre</h2>
+    <h2 class="section-title">Browse by Genre</h2>
     <div class="genre-grid" id="genreGrid"></div>
   </section>
 
@@ -1048,13 +1078,11 @@ function updateAllWishlistUI(){
   }
   if(state.currentMovie){
     const inW=isInWishlist(state.currentMovie._id);
-    // old modal btn (kept for compat)
     const btn=document.getElementById('modalWishBtn');
     if(btn){
       if(inW){btn.classList.add('wishlisted');btn.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlisted`;}
       else{btn.classList.remove('wishlisted');btn.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlist`;}
     }
-    // new prime overlay btn
     const primeBtn=document.getElementById('primeWishBtn');
     if(primeBtn){
       primeBtn.classList.toggle('active-wish',inW);
@@ -1152,11 +1180,9 @@ async function fetchMovies(type){
     const params=new URLSearchParams({limit:50});if(type)params.set('type',type);
     const data=await api('/movies?'+params);const movies=data.movies||[];
     movies.forEach(m=>{m._genres_normalized=normalizeGenres(m.genres);});
-    // Replace the entire type's cache atomically to prevent stale/duplicate entries
     if(db){
       await new Promise(r=>{
         const tx=db.transaction('movies','readwrite');const os=tx.objectStore('movies');
-        // Remove all existing entries for this type, then write fresh ones
         const req=os.getAll();
         req.onsuccess=()=>{
           (req.result||[]).forEach(m=>{if(!type||m.type===type)os.delete(m._id);});
@@ -1195,7 +1221,6 @@ function createCard(item){
       <div class="card-play-btn" onclick="event.stopPropagation();openPlayer(state.allContent.find(m=>m._id==='${item._id}'))"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
       <div class="card-year">${item.releaseYear||''}${genreTag?' · '+genreTag:''}</div>
     </div>`;
-  /* Below-card title for mobile */
   const belowTitle=document.createElement('div');
   belowTitle.className='card-below-title';
   belowTitle.textContent=item.title;
@@ -1406,7 +1431,14 @@ function clearGenreFilter(){
 
 function openSearch(){document.getElementById('searchOverlay').classList.add('active');document.body.style.overflow='hidden';setTimeout(()=>document.getElementById('searchInput').focus(),50);_navPush('search');}
 function closeSearch(){ history.back(); }
+
 document.getElementById('searchInput').addEventListener('input',e=>{clearTimeout(state.searchTimer);state.searchTimer=setTimeout(()=>runSearch(e.target.value),300);});
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter') {
+    e.preventDefault();
+    e.target.blur();
+  }
+});
 
 function runSearch(q){
   const res=document.getElementById('searchResults');
@@ -1429,7 +1461,16 @@ function runSearch(q){
   if(extraByGenre.length>0){html+=`<div class="search-category-label">Matching Genres (${extraByGenre.length})</div><div class="search-results-grid">`;extraByGenre.forEach(m=>html+=createCardHTML(m));html+=`</div>`;}
   if(extraByDesc.length>0){html+=`<div class="search-category-label">Related (${extraByDesc.length})</div><div class="search-results-grid">`;extraByDesc.forEach(m=>html+=createCardHTML(m));html+=`</div>`;}
   res.innerHTML=html;
-  res.querySelectorAll('.search-card-item').forEach(el=>{el.addEventListener('click',()=>{const id=el.dataset.movieId;const movie=state.allContent.find(m=>m._id===id);if(movie){closeSearch();openDetail(movie);}});});
+  res.querySelectorAll('.search-card-item').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const id=el.dataset.movieId;
+      const movie=state.allContent.find(m=>m._id===id);
+      if(movie){
+        _rawClose('search');
+        openDetail(movie, true);
+      }
+    });
+  });
 }
 
 function createCardHTML(item){
@@ -1449,7 +1490,7 @@ function createCardHTML(item){
     </div></div>`;
 }
 
-function openDetail(movie){
+function openDetail(movie, replaceHistory = false){
   state.currentMovie=movie;
   const body=document.getElementById('detailBody');
   const imgSrc=movie.backdropUrl||movie.posterUrl||'';
@@ -1566,7 +1607,8 @@ ${(()=>{
       `}
 
       <div class="prime-bottom-tabs">
-        <button class="prime-bottom-tab active" id="mltTab" style="cursor:default; pointer-events:none;">More Like This</button>
+        <button class="prime-bottom-tab active" id="mltTab" onclick="switchBottomTab('mlt')">More Like This</button>
+        <button class="prime-bottom-tab" id="moreDetailsTab" onclick="switchBottomTab('moreDetails')">More Details</button>
       </div>
       <div id="primeBottomContent">
         <div class="prime-more-like-this" id="moreLikeThisContent">
@@ -1580,7 +1622,12 @@ ${(()=>{
   overlay.classList.add('active');
   overlay.scrollTop=0;
   document.body.style.overflow='hidden';
-  _navPush('detail');
+  
+  if(replaceHistory) {
+    history.replaceState({skflip: 'detail'}, '', location.href);
+  } else {
+    _navPush('detail');
+  }
 }
 
 function playFirstEpisode(){
@@ -1618,16 +1665,27 @@ function buildEpisodeList(movie){
   const sortedSeasons=Object.keys(seasons).map(Number).sort((a,b)=>a-b);
   let html='';
 
-  sortedSeasons.forEach(s=>{
+  // 1. Generate Season Tabs if there's more than 1 season
+  if(sortedSeasons.length > 1) {
+    html += `<div class="user-season-tabs">`;
+    sortedSeasons.forEach((s, idx) => {
+      html += `<button class="user-season-tab ${idx===0?'active':''}" onclick="showUserSeason(${s}, this)">Season ${s}</button>`;
+    });
+    html += `</div>`;
+  }
+
+  // 2. Generate Episode Lists for each season
+  sortedSeasons.forEach((s, idx) => {
     const eps=(seasons[s]||[]).slice().sort((a,b)=>(a.episodeNumber||0)-(b.episodeNumber||0));
-    if(sortedSeasons.length>1){
-      html+=`<div style="font-size:.78rem;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">Season ${s}</div>`;
-    }
+    
+    html += `<div class="user-season-container" id="user_season_${s}" style="display: ${idx===0 ? 'block' : 'none'};">`;
+    
     eps.forEach(ep=>{
       const hasVid=!!(ep.videoUrl||ep.hlsUrl);
       const hasThumb=ep.thumbnailUrl&&ep.thumbnailUrl.startsWith('http');
       const title=ep.title||'Episode '+(ep.episodeNumber||'');
       const epJson=JSON.stringify(ep).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      
       html+=`<div class="prime-ep-item" onclick="${hasVid?`playEpisode(JSON.parse(this.dataset.ep))`:''}" data-ep='${JSON.stringify(ep).replace(/'/g,"&#39;")}' style="${hasVid?'cursor:pointer':'cursor:default;opacity:.55'}">
         <div class="prime-ep-play" style="${hasThumb?'padding:0;overflow:hidden;border-radius:6px':''}${hasVid?'':';opacity:.35'}">
           ${hasThumb
@@ -1643,9 +1701,25 @@ function buildEpisodeList(movie){
         <button class="prime-ep-more" onclick="event.stopPropagation()">⋮</button>
       </div>`;
     });
+    html += `</div>`;
   });
 
   return html||'<div style="color:var(--muted);font-size:.88rem;padding:20px 0">No episodes listed.</div>';
+}
+
+function showUserSeason(seasonNum, btn) {
+  const content = document.getElementById('primeTabContent');
+  if(!content) return;
+  
+  content.querySelectorAll('.user-season-container').forEach(el => el.style.display = 'none');
+  
+  const target = document.getElementById('user_season_' + seasonNum);
+  if(target) target.style.display = 'block';
+  
+  if(btn) {
+    btn.parentElement.querySelectorAll('.user-season-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
 }
 
 function buildMovieDetails(movie){
@@ -1727,6 +1801,19 @@ function buildMoreLikeThis(movie){
   }).join('')+`</div>`;
 }
 
+function switchBottomTab(tab){
+  document.getElementById('mltTab').classList.toggle('active',tab==='mlt');
+  document.getElementById('moreDetailsTab').classList.toggle('active',tab==='moreDetails');
+  const content=document.getElementById('primeBottomContent');
+  if(!content)return;
+  const movie=state.currentMovie;
+  if(tab==='mlt'){
+    content.innerHTML=`<div class="prime-more-like-this">${buildMoreLikeThis(movie)}</div>`;
+  } else {
+    content.innerHTML=`<div class="prime-more-details-tab">${buildMovieDetails(movie)}</div>`;
+  }
+}
+
 function closeDetail(){
   history.back();
 }
@@ -1754,20 +1841,6 @@ const muteBtn=document.getElementById('muteBtn');const fullscreenBtn=document.ge
 const centerPlayBtn=document.getElementById('centerPlayBtn');let hideUI_Timer=null;
 
 // ═══ History Navigation (mobile back button support) ═══════════════════════
-//
-//  DESIGN:
-//  • _navPush(id)  → pushState when an overlay OPENS
-//  • _rawClose(id) → only touches the DOM (hides overlay, cleans up video/search)
-//                    never touches history
-//  • popstate      → the ONLY place _rawClose is called; triggered by browser/
-//                    mobile back gesture or by close*() calling history.back()
-//  • close*()/Esc  → call history.back() only; popstate does the _rawClose
-//  • init()        → pushes a baseline 'home' entry so popstate is never
-//                    fired on an empty stack (which would navigate away)
-//
-//  This avoids the double-pop bug: previously close*() called history.back()
-//  AND popstate fired, closing two overlays for one back action.
-
 function _navPush(id){
   history.pushState({skflip: id}, '', location.href);
 }
@@ -1783,7 +1856,6 @@ function _rawClose(id){
   };
   const el = overlayIds[id] ? document.getElementById(overlayIds[id]) : null;
 
-  // Detail overlay gets a smooth slide-down exit animation
   if(id === 'detail' && el){
     el.classList.add('closing');
     setTimeout(()=>{ el.classList.remove('active','closing'); }, 340);
@@ -1791,9 +1863,7 @@ function _rawClose(id){
     el.classList.remove('active');
   }
 
-  // Player-specific cleanup
   if(id === 'player'){
-    // Save progress before stopping
     if(state.currentMovie && video.currentTime > 5){
       saveWatchProgress(state.currentMovie, video.currentTime, video.duration||0);
     }
@@ -1810,21 +1880,18 @@ function _rawClose(id){
     playerUI.classList.remove('idle');
     document.getElementById('videoWrap').style.cursor = 'default';
     _hideVideoSkeleton();
-    // After closing player, always return to movie details page
     const detailEl = document.getElementById('detailOverlay');
     if(state.currentMovie && detailEl && !detailEl.classList.contains('active')){
       setTimeout(() => { openDetail(state.currentMovie); }, 80);
     }
   }
 
-  // Search-specific cleanup
   if(id === 'search'){
     document.getElementById('searchInput').value = '';
     document.getElementById('searchResults').innerHTML =
       '<div class="search-hint"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Start typing to search…</div>';
   }
 
-  // Restore body scroll only when ALL overlays are closed
   const anyOpen = ['playerOverlay','detailOverlay','authOverlay','adminOverlay','searchOverlay','wishlistOverlay']
     .some(oid => {
       const o = document.getElementById(oid);
@@ -1833,22 +1900,13 @@ function _rawClose(id){
   if(!anyOpen) document.body.style.overflow = '';
 }
 
-// popstate is the SINGLE point that calls _rawClose.
-// It fires when the user taps the mobile back button OR when close*() calls history.back().
 window.addEventListener('popstate', e => {
-  // When the user presses back, we pop the overlay's pushState entry.
-  // The resulting state becomes 'home' (the replaceState baseline), so we must
-  // NOT return early here — we still need to close whichever overlay is open.
-  // If no overlay is open and we somehow reach here, fall through silently.
-
-  // Close whichever overlay is topmost
   if(document.getElementById('playerOverlay').classList.contains('active'))   { _rawClose('player');   return; }
   if(document.getElementById('detailOverlay').classList.contains('active'))   { _rawClose('detail');   return; }
   if(document.getElementById('adminOverlay').classList.contains('active'))    { _rawClose('admin');    return; }
   if(document.getElementById('searchOverlay').classList.contains('active'))   { _rawClose('search');   return; }
   if(document.getElementById('wishlistOverlay').classList.contains('active')) { _rawClose('wishlist'); return; }
   if(document.getElementById('authOverlay').classList.contains('active'))     { _rawClose('auth');     return; }
-  // No overlay is open — we're truly at the home baseline, nothing to do.
 });
 
 // ═══ Player helpers ══════════════════════════════════════════════════════════
@@ -1864,10 +1922,8 @@ function _syncPlayIcons(paused){
 function togglePlay(){ if(video.paused) video.play(); else video.pause(); }
 function skipVideo(s){ video.currentTime=Math.max(0,Math.min(video.duration||0,video.currentTime+s)); }
 
-// ── When video actually plays/pauses, sync all icons + controls visibility ───
 video.addEventListener('play',()=>{
   _syncPlayIcons(false);
-  // Brief flash of center icon then fade out
   centerPlayBtn.style.transition='none'; centerPlayBtn.style.opacity='1';
   requestAnimationFrame(()=>{ centerPlayBtn.style.transition='opacity .5s ease'; centerPlayBtn.style.opacity='0'; });
   resetIdleTimer();
@@ -1875,31 +1931,23 @@ video.addEventListener('play',()=>{
 
 video.addEventListener('pause',()=>{
   _syncPlayIcons(true);
-  // Keep center icon visible while paused, show controls
   centerPlayBtn.style.transition='opacity .3s ease'; centerPlayBtn.style.opacity='1';
   playerUI.classList.remove('idle');
   document.getElementById('videoWrap').style.cursor='default';
   clearTimeout(hideUI_Timer);
 });
 
-// ── Bottom bar play/pause button ─────────────────────────────────────────────
 playPauseBtn.addEventListener('click', togglePlay);
 
-// ── Video element click: only toggle controls visibility, never play/pause ───
-// Play/pause is ONLY triggered by centerPlayBtn or playPauseBtn
 video.addEventListener('click', e=>{
-  // If click bubbled from centerPlayBtn, let its onclick handle it
   if(centerPlayBtn.contains(e.target)) return;
-  // Otherwise: show/hide controls
   if(playerUI.classList.contains('idle')){ resetIdleTimer(); }
   else if(!video.paused){ playerUI.classList.add('idle'); document.getElementById('videoWrap').style.cursor='none'; centerPlayBtn.style.opacity='0'; }
 });
 
-// ── Progress bar ─────────────────────────────────────────────────────────────
 video.addEventListener('timeupdate',()=>{
   document.getElementById('currentTimeDisplay').textContent=formatTime(video.currentTime);
   if(video.duration) progressBar.style.width=(video.currentTime/video.duration*100)+'%';
-  // Save watch progress every 5 seconds
   if(state.currentMovie && video.currentTime - state._lastSaveTime >= 5){
     state._lastSaveTime = video.currentTime;
     saveWatchProgress(state.currentMovie, video.currentTime, video.duration||0);
@@ -1914,23 +1962,19 @@ progressContainer.addEventListener('mousedown',e=>{ isSeeking=true;const r=progr
 document.addEventListener('mousemove',e=>{ if(!isSeeking)return;const r=progressContainer.getBoundingClientRect();const p=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));if(video.duration){video.currentTime=p*video.duration;progressBar.style.width=(p*100)+'%';} });
 document.addEventListener('mouseup',()=>{ isSeeking=false; });
 
-// Touch seek on progress bar
 progressContainer.addEventListener('touchstart',e=>{ isSeeking=true;e.preventDefault(); },{passive:false});
 progressContainer.addEventListener('touchmove',e=>{ if(!isSeeking)return;e.preventDefault();const r=progressContainer.getBoundingClientRect();const p=Math.max(0,Math.min(1,(e.changedTouches[0].clientX-r.left)/r.width));if(video.duration){video.currentTime=p*video.duration;progressBar.style.width=(p*100)+'%';} },{passive:false});
 progressContainer.addEventListener('touchend',()=>{ isSeeking=false; });
 
-// ── Volume / Mute ─────────────────────────────────────────────────────────────
 volumeSlider.addEventListener('input',e=>{ video.volume=parseFloat(e.target.value);video.muted=(video.volume===0);updateMuteIcon(); });
 function updateMuteIcon(){const m=video.muted||video.volume===0;document.getElementById('iconVol').style.display=m?'none':'block';document.getElementById('iconMute').style.display=m?'block':'none';}
 muteBtn.addEventListener('click',()=>{ video.muted=!video.muted;volumeSlider.value=video.muted?0:(video.volume||1);updateMuteIcon(); });
 
-// ── Fullscreen ────────────────────────────────────────────────────────────────
 fullscreenBtn.addEventListener('click',()=>{
   const w=document.getElementById('playerOverlay');
   if(!document.fullscreenElement){
     const fsPromise=w.requestFullscreen ? w.requestFullscreen() : (w.webkitRequestFullscreen ? w.webkitRequestFullscreen() : Promise.reject());
     fsPromise.then(()=>{
-      // Lock to landscape on mobile
       if(screen.orientation && screen.orientation.lock){
         screen.orientation.lock('landscape').catch(()=>{});
       }
@@ -1942,7 +1986,6 @@ fullscreenBtn.addEventListener('click',()=>{
 });
 document.addEventListener('fullscreenchange',()=>{ const f=!!document.fullscreenElement;fullscreenBtn.innerHTML=f?'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>':'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>'; });
 
-// ── Idle / auto-hide controls ─────────────────────────────────────────────────
 function resetIdleTimer(){
   playerUI.classList.remove('idle');
   document.getElementById('videoWrap').style.cursor='default';
@@ -1958,32 +2001,25 @@ function resetIdleTimer(){
 document.getElementById('videoWrap').addEventListener('mousemove', resetIdleTimer);
 document.getElementById('videoWrap').addEventListener('mouseleave',()=>{ if(!video.paused){ playerUI.classList.add('idle'); document.getElementById('videoWrap').style.cursor='none'; centerPlayBtn.style.opacity='0'; } });
 
-// ── Mobile touch: tap=show/hide controls, double-tap=seek ±10s ───────────────
-// Touching anywhere EXCEPT centerPlayBtn and controls just shows/hides the UI
 let _lastTap=0, _tapTimer=null;
 document.getElementById('videoWrap').addEventListener('touchend', e=>{
-  // Ignore taps on centerPlayBtn (handled by its own onclick)
   if(centerPlayBtn.contains(e.target)) return;
-  // Ignore taps on bottom controls / top bar
   if(e.target.closest('.player-bottom') || e.target.closest('.player-top')) return;
   e.preventDefault();
   const now = Date.now();
   if(now - _lastTap < 300){
-    // Double-tap: seek based on which screen half
     clearTimeout(_tapTimer);
     skipVideo(e.changedTouches[0].clientX < window.innerWidth/2 ? -10 : 10);
   } else {
     _tapTimer = setTimeout(()=>{
-      // Single tap: toggle controls visibility only — never play/pause
       if(playerUI.classList.contains('idle')){ resetIdleTimer(); }
       else if(!video.paused){ playerUI.classList.add('idle'); document.getElementById('videoWrap').style.cursor='none'; centerPlayBtn.style.opacity='0'; }
-      else { resetIdleTimer(); } // paused: show controls
+      else { resetIdleTimer(); }
     }, 300);
   }
   _lastTap = now;
 }, {passive:false});
 
-// ── Keyboard shortcuts ────────────────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
   if(document.getElementById('searchOverlay').classList.contains('active')){ if(e.key==='Escape') closeSearch(); return; }
   if(!document.getElementById('playerOverlay').classList.contains('active')) return;
@@ -2081,7 +2117,6 @@ function openContinueWatching(id){
   const item=_getContinueList().find(x=>x.id===id);
   const movie=state.allContent.find(m=>m._id===id);
   if(!movie){ showToast('Content not found in library','error'); return; }
-  state.currentMovie = movie; // Fix applied
   state._resumeTime=item?item.currentTime:0;
   openPlayer(movie);
 }
@@ -2104,7 +2139,6 @@ function _hideVideoSkeleton(){
   if(sk)sk.classList.remove('show');
 }
 
-// Hide skeleton once video can play
 video.addEventListener('canplay', _hideVideoSkeleton);
 video.addEventListener('playing', _hideVideoSkeleton);
 video.addEventListener('error', ()=>{ _hideVideoSkeleton(); showToast('Video failed to load.','error'); });
@@ -2117,16 +2151,14 @@ function openPlayer(movie){
   const src=movie.hlsUrl||movie.videoUrl;
   if(!src){ showToast('No video URL available for this content.','error'); return; }
 
-  // Set title (include episode title if playing an episode)
   document.getElementById('playerTitle').textContent = (movie._episodeTitle ? movie.title+' — '+movie._episodeTitle : movie.title);
   progressBar.style.width='0%';
   document.getElementById('currentTimeDisplay').textContent='0:00';
   document.getElementById('durationDisplay').textContent='0:00';
-  _syncPlayIcons(true); // show play icon (paused state) until video starts
+  _syncPlayIcons(true); 
   centerPlayBtn.style.opacity='0';
   playerUI.classList.remove('idle');
 
-  // Show skeleton loader immediately
   _showVideoSkeleton('Loading "' + movie.title + '"…');
 
   if(state.playerHls){ state.playerHls.destroy(); state.playerHls=null; }
@@ -2160,7 +2192,6 @@ function openPlayer(movie){
 }
 
 function closePlayer(){
-  // Just go back in history — popstate will call _rawClose('player')
   history.back();
 }
 
@@ -2233,6 +2264,7 @@ async function loadAdminDashboard(){
       <p style="color:var(--muted);font-size:.88rem">Use the sidebar to manage content or upload new movies and series.</p>`;
   }catch(e){main.innerHTML=`<div class="admin-header"><h1>Dashboard</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div><div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminDashboard()">Try Again</button></div>`;}
 }
+
 async function loadAdminMovies(main,searchQuery=''){
   main.innerHTML='<p style="color:var(--muted)">Loading content…</p>';
   try{
@@ -2279,20 +2311,12 @@ async function executeDeleteMovie(id){
 //  UPLOAD / EDIT FORM  +  EPISODE MANAGER
 // ═══════════════════════════════════════════════════
 
-// Runtime episode state: { [seasonNum]: [ epObj, … ] }
-// epObj = { id, episodeNumber, title, description, thumbnailUrl, videoUrl, hlsUrl, duration, airDate, _editing }
-let adminSeasons = {};      // keyed by season number (string)
-let adminActiveSeason = 1;  // currently visible season tab
+let adminSeasons = {};      
+let adminActiveSeason = 1;  
 
-/* ──────────────────────── helpers ──────────────────────── */
 function epId(){ return 'ep_' + Date.now() + '_' + Math.random().toString(36).slice(2,7); }
-
 function isSType(val){ return val==='series'||val==='original'; }
-
-function getEpisodesByseason(){
-  // Returns the current adminSeasons object
-  return adminSeasons;
-}
+function getEpisodesByseason(){ return adminSeasons; }
 
 function initSeasonState(movieData){
   adminSeasons = {};
@@ -2300,7 +2324,6 @@ function initSeasonState(movieData){
   if(!movieData) return;
   const eps = Array.isArray(movieData.episodes) ? movieData.episodes : [];
   if(eps.length === 0){
-    // Create one empty season
     const s = movieData.seasonNumber || 1;
     adminSeasons[s] = [];
     adminActiveSeason = s;
@@ -2314,7 +2337,6 @@ function initSeasonState(movieData){
   adminActiveSeason = Math.min(...Object.keys(adminSeasons).map(Number));
 }
 
-/* ──────────────────────── main form ──────────────────────── */
 function showUploadForm(main, movieData = null){
   const isEdit = !!movieData;
   const vTitle   = isEdit ? (movieData.title||'')          : '';
@@ -2333,7 +2355,6 @@ function showUploadForm(main, movieData = null){
   const genreStr = Array.isArray(vGenres) ? vGenres.join(', ') : vGenres;
   const showSeries = isSType(vType);
 
-  // Init episode state from existing data
   if(isEdit && showSeries) initSeasonState(movieData);
   else { adminSeasons = { 1:[] }; adminActiveSeason = 1; }
 
@@ -2347,7 +2368,6 @@ function showUploadForm(main, movieData = null){
     </div>
     <div class="upload-panel">
 
-      <!-- Basic Info -->
       <div class="form-group"><label class="form-label">Title *</label>
         <input class="admin-input" id="up_title" value="${vTitle}" placeholder="Movie or series title"/>
       </div>
@@ -2375,7 +2395,6 @@ function showUploadForm(main, movieData = null){
         </div>
       </div>
 
-      <!-- Media -->
       <div class="up-section">
         <div class="up-section-hd">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -2397,7 +2416,6 @@ function showUploadForm(main, movieData = null){
         </div>
       </div>
 
-      <!-- Languages -->
       <div class="up-section">
         <div class="up-section-hd">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -2415,7 +2433,6 @@ function showUploadForm(main, movieData = null){
         </div>
       </div>
 
-      <!-- Description -->
       <div class="up-section">
         <div class="up-section-hd">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
@@ -2426,7 +2443,6 @@ function showUploadForm(main, movieData = null){
         </div>
       </div>
 
-      <!-- ── EPISODE MANAGER (series only) ── -->
       <div class="up-section" id="epManagerSection" style="${showSeries?'':'display:none'}">
         <div class="up-section-hd">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8M12 3v4"/></svg>
@@ -2435,7 +2451,6 @@ function showUploadForm(main, movieData = null){
         <div id="epManagerRoot"></div>
       </div>
 
-      <!-- Save -->
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
         <button class="btn-submit" id="btnSubmitMovie" onclick="submitMovie()">${isEdit?'Update Content':'Save Content'}</button>
         <button class="btn-gate-cancel" style="width:auto;margin-top:0" onclick="loadAdminMovies(document.getElementById('adminMain'))">Cancel</button>
@@ -2445,7 +2460,6 @@ function showUploadForm(main, movieData = null){
   if(showSeries) renderEpManager();
 }
 
-/* ──────────────────────── type change ──────────────────────── */
 function onUpTypeChange(val){
   const sec = document.getElementById('epManagerSection');
   if(!sec) return;
@@ -2458,7 +2472,6 @@ function onUpTypeChange(val){
   }
 }
 
-/* ──────────────────────── render season tabs + episode list ──────────────────────── */
 function renderEpManager(){
   const root = document.getElementById('epManagerRoot');
   if(!root) return;
@@ -2467,7 +2480,6 @@ function renderEpManager(){
   const eps = adminSeasons[adminActiveSeason] || [];
 
   root.innerHTML = `
-    <!-- Season Tabs -->
     <div class="season-tabs-bar">
       ${seasons.map(s=>`
         <button class="season-tab-btn ${s===adminActiveSeason?'active':''}" onclick="switchAdminSeason(${s})">
@@ -2477,7 +2489,6 @@ function renderEpManager(){
       <button class="season-add-btn" onclick="addAdminSeason()">+ Add Season</button>
     </div>
 
-    <!-- Toolbar -->
     <div class="ep-manager-toolbar">
       <div class="ep-manager-info">
         Season ${adminActiveSeason} — <span>${eps.length}</span> episode${eps.length!==1?'s':''}
@@ -2489,7 +2500,6 @@ function renderEpManager(){
       </button>
     </div>
 
-    <!-- Episode List -->
     <div class="ep-card-list" id="epCardList">
       ${eps.length === 0 ? renderEpEmpty() : eps.map((ep,i)=>renderEpCard(ep,i,eps.length)).join('')}
     </div>`;
@@ -2598,7 +2608,6 @@ function renderEpEditForm(ep, idx){
   </div>`;
 }
 
-/* ──────────────────────── season actions ──────────────────────── */
 function switchAdminSeason(n){
   adminActiveSeason = n;
   renderEpManager();
@@ -2623,13 +2632,11 @@ function deleteAdminSeason(n){
   showToast('Season '+n+' removed','info');
 }
 
-/* ──────────────────────── episode CRUD ──────────────────────── */
 function addEpisodeCard(){
   const eps = adminSeasons[adminActiveSeason] = adminSeasons[adminActiveSeason]||[];
   const newEp = { id:'ep_new_'+epId(), episodeNumber: eps.length+1, title:'', description:'', thumbnailUrl:'', videoUrl:'', hlsUrl:'', duration:'', airDate:'', _editing:true };
   eps.push(newEp);
   renderEpManager();
-  // Scroll to bottom of list
   setTimeout(()=>{ const l=document.getElementById('epCardList'); if(l) l.lastElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
 }
 
@@ -2643,7 +2650,6 @@ function cancelEditEp(id){
   const eps = adminSeasons[adminActiveSeason]||[];
   const idx = eps.findIndex(e=>e.id===id);
   if(idx===-1) return;
-  // If it was a brand-new unsaved ep, remove it
   if(eps[idx].id.startsWith('ep_new')) eps.splice(idx,1);
   else eps[idx]._editing = false;
   renderEpManager();
@@ -2663,7 +2669,6 @@ function saveEp(id){
   const eps = adminSeasons[adminActiveSeason]||[];
   const ep = eps.find(e=>e.id===id);
   if(!ep){ showToast('Episode not found','error'); return; }
-  // Commit
   ep.episodeNumber = num;
   ep.title         = title;
   ep.description   = desc;
@@ -2673,7 +2678,6 @@ function saveEp(id){
   ep.duration      = dur;
   ep.airDate       = air;
   ep._editing      = false;
-  // Fix "ep_new" id to permanent
   if(ep.id.startsWith('ep_new')) ep.id = epId();
   renderEpManager();
   showToast('"'+title+'" saved!','success');
@@ -2698,7 +2702,6 @@ function moveEp(id, dir){
   renderEpManager();
 }
 
-/* ──────────────────────── image preview helpers ──────────────────────── */
 function upPreview(input, previewId){
   const img = document.getElementById(previewId);
   if(!img) return;
@@ -2715,12 +2718,11 @@ function upPreviewInline(input){
   else img.classList.remove('show');
 }
 
-/* ──────────────────────── collect all episodes for payload ──────────────────────── */
 function collectAllEpisodes(){
   const all = [];
   Object.keys(adminSeasons).sort((a,b)=>Number(a)-Number(b)).forEach(s=>{
     (adminSeasons[s]||[]).forEach(ep=>{
-      if(ep._editing) return; // skip unsaved drafts
+      if(ep._editing) return; 
       all.push({
         season:        Number(s),
         episodeNumber: ep.episodeNumber,
@@ -2892,4 +2894,3 @@ body.blur-bg #home-screen {
 }
 
 </style>
-
