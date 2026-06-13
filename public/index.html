@@ -202,7 +202,7 @@ img{display:block;max-width:100%}
 .feature-card p{color:var(--muted);font-size:.88rem;line-height:1.6}
 
 .promo-banner{margin:40px clamp(16px,4vw,60px);background:linear-gradient(135deg,#0e0e1c 0%,#1a1430 50%,#0e0e1c 100%);border:1px solid rgba(224,168,48,.25);border-radius:var(--radius-lg);padding:clamp(36px,5vw,64px) clamp(28px,5vw,64px);position:relative;overflow:hidden}
-.promo-banner::before{content:'absolute;top:-50%;left:-20%;width:500px;height:500px;background:radial-gradient(circle,rgba(224,168,48,.1) 0%,transparent 60%);pointer-events:none}
+.promo-banner::before{content:'';position:absolute;top:-50%;left:-20%;width:500px;height:500px;background:radial-gradient(circle,rgba(224,168,48,.1) 0%,transparent 60%);pointer-events:none}
 .promo-inner{display:flex;align-items:center;justify-content:space-between;gap:40px}
 .promo-eyebrow{color:var(--gold);font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
 .promo-text h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.5rem);line-height:.95;letter-spacing:1px;margin-bottom:16px}
@@ -1650,21 +1650,13 @@ function buildEpisodeList(movie){
 
   // Group episodes by season
   const seasons={};
-  
-  // PRE-FILL ALL SEASONS: This ensures every season added in the Admin portal appears 
-  // in the dropdown menu, even if no episodes have been uploaded for it yet.
-  const maxSeason = movie.seasonCount || 1;
-  for(let i=1; i<=maxSeason; i++) {
-    seasons[i] = [];
-  }
-
   if(episodes){
     episodes.forEach(ep=>{
       const s=ep.season||ep.seasonNumber||1;
       if(!seasons[s])seasons[s]=[];
       seasons[s].push(ep);
     });
-  } else if (!episodes && maxSeason === 1) {
+  } else {
     // Fallback: generate placeholders when no episode data saved yet
     const count=movie.episodeCount||3;
     seasons[1]=Array.from({length:Math.min(count,10)},(_,i)=>({episodeNumber:i+1,title:'',videoUrl:'',hlsUrl:'',duration:'',thumbnailUrl:'',airDate:''}));
@@ -1673,15 +1665,13 @@ function buildEpisodeList(movie){
   const sortedSeasons=Object.keys(seasons).map(Number).sort((a,b)=>a-b);
   let html='';
 
-  // 1. Generate Season Dropdown Button if there's more than 1 season
+  // 1. Generate Season Tabs if there's more than 1 season
   if(sortedSeasons.length > 1) {
-    html += `
-    <div class="user-season-selector" style="margin: 16px 0; position: relative; display: inline-block;">
-      <select onchange="showUserSeason(this.value)" style="appearance: none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: var(--text); padding: 10px 40px 10px 16px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; outline: none; transition: border-color 0.2s;">
-        ${sortedSeasons.map(s => `<option value="${s}" style="background: var(--bg3); color: white;">Season ${s}</option>`).join('')}
-      </select>
-      <svg style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>`;
+    html += `<div class="user-season-tabs">`;
+    sortedSeasons.forEach((s, idx) => {
+      html += `<button class="user-season-tab ${idx===0?'active':''}" onclick="showUserSeason(${s}, this)">Season ${s}</button>`;
+    });
+    html += `</div>`;
   }
 
   // 2. Generate Episode Lists for each season
@@ -1690,14 +1680,11 @@ function buildEpisodeList(movie){
     
     html += `<div class="user-season-container" id="user_season_${s}" style="display: ${idx===0 ? 'block' : 'none'};">`;
     
-    if(eps.length === 0) {
-       html += `<div style="color:var(--muted);font-size:.88rem;padding:20px 0;text-align:center;">No episodes available for this season yet.</div>`;
-    }
-
     eps.forEach(ep=>{
       const hasVid=!!(ep.videoUrl||ep.hlsUrl);
       const hasThumb=ep.thumbnailUrl&&ep.thumbnailUrl.startsWith('http');
       const title=ep.title||'Episode '+(ep.episodeNumber||'');
+      const epJson=JSON.stringify(ep).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
       
       html+=`<div class="prime-ep-item" onclick="${hasVid?`playEpisode(JSON.parse(this.dataset.ep))`:''}" data-ep='${JSON.stringify(ep).replace(/'/g,"&#39;")}' style="${hasVid?'cursor:pointer':'cursor:default;opacity:.55'}">
         <div class="prime-ep-play" style="${hasThumb?'padding:0;overflow:hidden;border-radius:6px':''}${hasVid?'':';opacity:.35'}">
@@ -1720,7 +1707,7 @@ function buildEpisodeList(movie){
   return html||'<div style="color:var(--muted);font-size:.88rem;padding:20px 0">No episodes listed.</div>';
 }
 
-function showUserSeason(seasonNum) {
+function showUserSeason(seasonNum, btn) {
   const content = document.getElementById('primeTabContent');
   if(!content) return;
   
@@ -1728,6 +1715,11 @@ function showUserSeason(seasonNum) {
   
   const target = document.getElementById('user_season_' + seasonNum);
   if(target) target.style.display = 'block';
+  
+  if(btn) {
+    btn.parentElement.querySelectorAll('.user-season-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
 }
 
 function buildMovieDetails(movie){
@@ -2726,3 +2718,179 @@ function upPreviewInline(input){
   else img.classList.remove('show');
 }
 
+function collectAllEpisodes(){
+  const all = [];
+  Object.keys(adminSeasons).sort((a,b)=>Number(a)-Number(b)).forEach(s=>{
+    (adminSeasons[s]||[]).forEach(ep=>{
+      if(ep._editing) return; 
+      all.push({
+        season:        Number(s),
+        episodeNumber: ep.episodeNumber,
+        title:         ep.title,
+        description:   ep.description,
+        thumbnailUrl:  ep.thumbnailUrl,
+        videoUrl:      ep.videoUrl,
+        hlsUrl:        ep.hlsUrl,
+        duration:      ep.duration,
+        airDate:       ep.airDate
+      });
+    });
+  });
+  return all;
+}
+
+/* ──────────────────────── submit ──────────────────────── */
+async function submitMovie(){
+  const btn = document.getElementById('btnSubmitMovie');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  const genresRaw = document.getElementById('up_genres')?.value||'';
+  const type      = document.getElementById('up_type')?.value||'movie';
+  const episodes  = isSType(type) ? collectAllEpisodes() : [];
+  const payload = {
+    title:       document.getElementById('up_title').value.trim(),
+    type,
+    releaseYear: document.getElementById('up_year').value   ? parseInt(document.getElementById('up_year').value)    : null,
+    genres:      genresRaw.split(',').map(g=>g.trim()).filter(Boolean),
+    rating:      document.getElementById('up_rating').value.trim() ? parseFloat(document.getElementById('up_rating').value) : null,
+    duration:    document.getElementById('up_duration').value ? parseInt(document.getElementById('up_duration').value) : null,
+    posterUrl:   document.getElementById('up_poster').value.trim(),
+    backdropUrl: document.getElementById('up_backdrop').value.trim(),
+    videoUrl:    document.getElementById('up_video').value.trim(),
+    hlsUrl:      document.getElementById('up_hls').value.trim(),
+    description:       document.getElementById('up_desc').value.trim(),
+    audioLanguages:    document.getElementById('up_audio')?.value.trim() ? document.getElementById('up_audio').value.split(',').map(s=>s.trim()).filter(Boolean) : [],
+    subtitleLanguages: document.getElementById('up_subs')?.value.trim()  ? document.getElementById('up_subs').value.split(',').map(s=>s.trim()).filter(Boolean)  : [],
+    episodes,
+    episodeCount: episodes.length || null,
+    seasonCount:  isSType(type) ? Object.keys(adminSeasons).length : null
+  };
+  if(!payload.title){ showToast('Title is required.','error'); if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';} return; }
+  // Warn about unsaved episode edits
+  const hasDraft = Object.values(adminSeasons).some(arr=>arr.some(e=>e._editing));
+  if(hasDraft){ showToast('You have unsaved episode edits. Save or cancel them first.','error'); if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';} return; }
+  try{
+    if(state.editingMovieId){
+      await api('/movies/'+state.editingMovieId,{method:'PUT',body:JSON.stringify(payload)});
+      showToast('"'+payload.title+'" updated!','success');
+    } else {
+      await api('/movies',{method:'POST',body:JSON.stringify(payload)});
+      showToast('"'+payload.title+'" saved!','success');
+    }
+    state.editingMovieId = null;
+    closeAdmin();
+    await refreshHomeData();
+    window.scrollTo({top:0,behavior:'smooth'});
+    showToast('Changes are now live!','success');
+  }catch(e){ showToast(e.message,'error'); if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';} }
+}
+
+async function refreshHomeData(){
+  const[movies,series,originals]=await Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
+  state.movies=movies;state.series=series;state.originals=originals;
+  // Deduplicate by _id in case of any overlap between type buckets
+  const seen=new Set();
+  state.allContent=[...movies,...series,...originals].filter(m=>{if(seen.has(m._id))return false;seen.add(m._id);return true;});
+  if(state.activeGenreFilter)clearGenreFilter();
+  const hasSlider=initHeroSlider(movies,series,originals);
+  if(!hasSlider){
+    if(movies.length>0)setHero(movies[0]);
+    else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;document.getElementById('heroWish').disabled=true;}
+  }
+  populateRow(document.getElementById('trendingRow'),movies,'No movies yet. Content will appear here once added.');
+  populateRow(document.getElementById('seriesRow'),series,'No series available yet.');
+  populateRow(document.getElementById('originalsRow'),originals,'No originals yet.');
+  renderGenreGrid();
+}
+
+// ═══ Toast ═══
+function showToast(msg,type='info'){
+  const c=document.getElementById('toastContainer');const t=document.createElement('div');
+  t.className='toast '+type;const icons={success:'✓',error:'✕',info:'ℹ'};
+  t.innerHTML=`<span style="font-weight:700">${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},4000);
+}
+
+// ═══ Navigation ═══
+function navTo(page){
+  document.querySelectorAll('.nav-links a').forEach(a=>a.classList.toggle('active',a.dataset.page===page));
+  const map={movies:'moviesSection',series:'seriesSection',originals:'originalsSection',genres:'genresSection'};
+  if(page==='home')window.scrollTo({top:0,behavior:'smooth'});
+  else if(map[page])document.getElementById(map[page])?.scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('hamburger').classList.remove('open');document.getElementById('navLinks').classList.remove('open');
+}
+function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
+
+// ═══ Events ═══
+window.addEventListener('scroll',()=>{document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>30);},{passive:true});
+document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('open');document.getElementById('navLinks').classList.toggle('open');});
+document.querySelectorAll('#navLinks a').forEach(a=>{a.addEventListener('click',()=>{document.getElementById('hamburger').classList.remove('open');document.getElementById('navLinks').classList.remove('open');});});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  // Close only the topmost open overlay, one at a time
+  if(document.getElementById('playerOverlay').classList.contains('active'))  { closePlayer();   return; }
+  if(document.getElementById('detailOverlay').classList.contains('active'))  { closeDetail();   return; }
+  if(document.getElementById('adminOverlay').classList.contains('active'))   { closeAdmin();    return; }
+  if(document.getElementById('searchOverlay').classList.contains('active'))  { closeSearch();   return; }
+  if(document.getElementById('wishlistOverlay').classList.contains('active')){ closeWishlist(); return; }
+  if(document.getElementById('authOverlay').classList.contains('active'))    { closeAuth();     return; }
+});
+
+// ═══ Init ═══
+async function init(){
+  try{await openIDB();}catch(e){console.warn('IDB unavailable:',e);}
+  // Push a baseline history entry so mobile back never navigates away from the page.
+  // All overlay pushState entries sit on top of this. Popping back to it is a no-op.
+  history.replaceState({skflip:'home'}, '', location.href);
+  loadStoredAuth();renderNav();renderFooter();showSkeletons();
+  const[movies,series,originals]=await Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
+  state.movies=movies;state.series=series;state.originals=originals;
+  const seen=new Set();
+  state.allContent=[...movies,...series,...originals].filter(m=>{if(seen.has(m._id))return false;seen.add(m._id);return true;});
+  const hasSlider=initHeroSlider(movies,series,originals);
+  if(!hasSlider){
+    if(movies.length>0){setHero(movies[0]);}
+    else{document.getElementById('heroBgImg').classList.add('hidden-img');document.getElementById('heroTitle').innerHTML='<span>SKFLIP</span>';document.getElementById('heroEmptySub').style.display='block';document.getElementById('heroPlay').disabled=true;document.getElementById('heroInfo').disabled=true;document.getElementById('heroWish').disabled=true;}
+  }
+  populateRow(document.getElementById('trendingRow'),movies,'No movies yet. Content will appear here once added.');
+  populateRow(document.getElementById('seriesRow'),series,'No series available yet.');
+  populateRow(document.getElementById('originalsRow'),originals,'No originals yet.');
+  renderGenreGrid();
+  renderContinueWatching();
+  document.getElementById('loadingScreen').classList.add('hidden');
+}
+init();
+</script>
+
+<div id="transition-layer">
+  <img id="transition-img"/>
+</div>
+
+</body>
+</html>
+
+<style>
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+#transition-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+}
+#transition-img {
+  position: absolute;
+  border-radius: 12px;
+  object-fit: cover;
+  transition: all 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+body.blur-bg #home-screen {
+  filter: blur(12px) brightness(0.6);
+  transform: scale(1.02);
+  transition: all 400ms ease;
+}
+
+</style>
