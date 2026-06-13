@@ -202,7 +202,7 @@ img{display:block;max-width:100%}
 .feature-card p{color:var(--muted);font-size:.88rem;line-height:1.6}
 
 .promo-banner{margin:40px clamp(16px,4vw,60px);background:linear-gradient(135deg,#0e0e1c 0%,#1a1430 50%,#0e0e1c 100%);border:1px solid rgba(224,168,48,.25);border-radius:var(--radius-lg);padding:clamp(36px,5vw,64px) clamp(28px,5vw,64px);position:relative;overflow:hidden}
-.promo-banner::before{content:'';position:absolute;top:-50%;left:-20%;width:500px;height:500px;background:radial-gradient(circle,rgba(224,168,48,.1) 0%,transparent 60%);pointer-events:none}
+.promo-banner::before{content:'absolute;top:-50%;left:-20%;width:500px;height:500px;background:radial-gradient(circle,rgba(224,168,48,.1) 0%,transparent 60%);pointer-events:none}
 .promo-inner{display:flex;align-items:center;justify-content:space-between;gap:40px}
 .promo-eyebrow{color:var(--gold);font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
 .promo-text h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.5rem);line-height:.95;letter-spacing:1px;margin-bottom:16px}
@@ -1650,13 +1650,21 @@ function buildEpisodeList(movie){
 
   // Group episodes by season
   const seasons={};
+  
+  // PRE-FILL ALL SEASONS: This ensures every season added in the Admin portal appears 
+  // in the dropdown menu, even if no episodes have been uploaded for it yet.
+  const maxSeason = movie.seasonCount || 1;
+  for(let i=1; i<=maxSeason; i++) {
+    seasons[i] = [];
+  }
+
   if(episodes){
     episodes.forEach(ep=>{
       const s=ep.season||ep.seasonNumber||1;
       if(!seasons[s])seasons[s]=[];
       seasons[s].push(ep);
     });
-  } else {
+  } else if (!episodes && maxSeason === 1) {
     // Fallback: generate placeholders when no episode data saved yet
     const count=movie.episodeCount||3;
     seasons[1]=Array.from({length:Math.min(count,10)},(_,i)=>({episodeNumber:i+1,title:'',videoUrl:'',hlsUrl:'',duration:'',thumbnailUrl:'',airDate:''}));
@@ -1665,13 +1673,15 @@ function buildEpisodeList(movie){
   const sortedSeasons=Object.keys(seasons).map(Number).sort((a,b)=>a-b);
   let html='';
 
-  // 1. Generate Season Tabs if there's more than 1 season
+  // 1. Generate Season Dropdown Button if there's more than 1 season
   if(sortedSeasons.length > 1) {
-    html += `<div class="user-season-tabs">`;
-    sortedSeasons.forEach((s, idx) => {
-      html += `<button class="user-season-tab ${idx===0?'active':''}" onclick="showUserSeason(${s}, this)">Season ${s}</button>`;
-    });
-    html += `</div>`;
+    html += `
+    <div class="user-season-selector" style="margin: 16px 0; position: relative; display: inline-block;">
+      <select onchange="showUserSeason(this.value)" style="appearance: none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: var(--text); padding: 10px 40px 10px 16px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; outline: none; transition: border-color 0.2s;">
+        ${sortedSeasons.map(s => `<option value="${s}" style="background: var(--bg3); color: white;">Season ${s}</option>`).join('')}
+      </select>
+      <svg style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>`;
   }
 
   // 2. Generate Episode Lists for each season
@@ -1680,11 +1690,14 @@ function buildEpisodeList(movie){
     
     html += `<div class="user-season-container" id="user_season_${s}" style="display: ${idx===0 ? 'block' : 'none'};">`;
     
+    if(eps.length === 0) {
+       html += `<div style="color:var(--muted);font-size:.88rem;padding:20px 0;text-align:center;">No episodes available for this season yet.</div>`;
+    }
+
     eps.forEach(ep=>{
       const hasVid=!!(ep.videoUrl||ep.hlsUrl);
       const hasThumb=ep.thumbnailUrl&&ep.thumbnailUrl.startsWith('http');
       const title=ep.title||'Episode '+(ep.episodeNumber||'');
-      const epJson=JSON.stringify(ep).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
       
       html+=`<div class="prime-ep-item" onclick="${hasVid?`playEpisode(JSON.parse(this.dataset.ep))`:''}" data-ep='${JSON.stringify(ep).replace(/'/g,"&#39;")}' style="${hasVid?'cursor:pointer':'cursor:default;opacity:.55'}">
         <div class="prime-ep-play" style="${hasThumb?'padding:0;overflow:hidden;border-radius:6px':''}${hasVid?'':';opacity:.35'}">
@@ -1707,7 +1720,7 @@ function buildEpisodeList(movie){
   return html||'<div style="color:var(--muted);font-size:.88rem;padding:20px 0">No episodes listed.</div>';
 }
 
-function showUserSeason(seasonNum, btn) {
+function showUserSeason(seasonNum) {
   const content = document.getElementById('primeTabContent');
   if(!content) return;
   
@@ -1715,11 +1728,6 @@ function showUserSeason(seasonNum, btn) {
   
   const target = document.getElementById('user_season_' + seasonNum);
   if(target) target.style.display = 'block';
-  
-  if(btn) {
-    btn.parentElement.querySelectorAll('.user-season-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-  }
 }
 
 function buildMovieDetails(movie){
