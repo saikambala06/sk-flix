@@ -211,6 +211,7 @@ img{display:block;max-width:100%}
 .btn-promo:hover{background:var(--gold);color:#000;transform:translateY(-2px)}
 .btn-promo.claimed{background:var(--green);border-color:var(--green);color:#fff;cursor:default;pointer-events:none}
 .btn-promo.claimed:hover{transform:none}
+.btn-promo.needs-login{background:rgba(224,168,48,.12);border-color:rgba(224,168,48,.5);color:var(--gold)}
 .device-stack{position:relative;width:190px;height:150px;flex-shrink:0}
 .device{position:absolute;border-radius:10px;border:2px solid rgba(224,168,48,.4);background:linear-gradient(135deg,var(--surface),var(--bg3))}
 .d-tv{width:170px;height:105px;bottom:0;left:0}.d-tablet{width:115px;height:78px;top:0;right:0}.d-phone{width:52px;height:88px;bottom:0;right:0}
@@ -627,10 +628,27 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   .ep-edit-form .span2{grid-column:1}
 }
 
-.toast{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.88rem;min-width:220px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4);animation:slideInRight .3s ease;display:flex;align-items:center;gap:10px;word-break:break-word}
-.toast.success{border-left:3px solid var(--green)}
-.toast.error{border-left:3px solid var(--red)}
-.toast.info{border-left:3px solid var(--cyan)}
+.toast-container{position:fixed;bottom:28px;right:24px;z-index:9500;display:flex;flex-direction:column;gap:12px;align-items:flex-end;pointer-events:none;}
+.toast{background:var(--bg3);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:0;font-size:.95rem;min-width:300px;max-width:420px;box-shadow:0 16px 48px rgba(0,0,0,.7),0 4px 16px rgba(0,0,0,.5);animation:toastSlideIn .4s cubic-bezier(0.34,1.56,0.64,1) both;display:flex;align-items:stretch;overflow:hidden;word-break:break-word;pointer-events:all;position:relative;}
+.toast-accent{width:4px;flex-shrink:0}
+.toast-icon-wrap{display:flex;align-items:center;justify-content:center;width:48px;flex-shrink:0;font-size:1.1rem;font-weight:700}
+.toast-body{flex:1;padding:14px 10px 14px 0;display:flex;flex-direction:column;justify-content:center}
+.toast-msg{font-size:.92rem;font-weight:500;line-height:1.4;color:var(--text)}
+.toast-close-btn{background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;font-size:.9rem;padding:0 14px;align-self:stretch;display:flex;align-items:center;transition:color .2s;flex-shrink:0}
+.toast-close-btn:hover{color:var(--text)}
+.toast.success .toast-accent{background:var(--green)}
+.toast.success .toast-icon-wrap{background:rgba(0,230,118,.1);color:var(--green)}
+.toast.error   .toast-accent{background:var(--red)}
+.toast.error   .toast-icon-wrap{background:rgba(255,71,87,.1);color:var(--red)}
+.toast.info    .toast-accent{background:var(--cyan)}
+.toast.info    .toast-icon-wrap{background:rgba(0,212,255,.1);color:var(--cyan)}
+.toast.warning .toast-accent{background:var(--gold)}
+.toast.warning .toast-icon-wrap{background:rgba(224,168,48,.1);color:var(--gold)}
+.toast-progress{position:absolute;bottom:0;left:0;height:2px;border-radius:0 0 0 0;animation:toastProg 4.5s linear forwards;}
+.toast.success .toast-progress{background:var(--green)}
+.toast.error   .toast-progress{background:var(--red)}
+.toast.info    .toast-progress{background:var(--cyan)}
+.toast.warning .toast-progress{background:var(--gold)}
 
 .loading-screen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
 .loading-screen.hidden{opacity:0;pointer-events:none}
@@ -668,6 +686,8 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastSlideIn{from{opacity:0;transform:translateX(60px) scale(.92)}to{opacity:1;transform:translateX(0) scale(1)}}
+@keyframes toastProg{from{width:100%}to{width:0%}}
 @keyframes loadBar{0%{transform:translateX(-100%)}60%{transform:translateX(100%)}100%{transform:translateX(100%)}}
 
 @media(max-width:900px){.hero-gradient{background:linear-gradient(to right,rgba(8,8,16,.97) 0%,rgba(8,8,16,.7) 100%)}}
@@ -709,7 +729,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   .card-play-btn{display:none!important}
   .hero-btns{flex-direction:column;gap:12px;}
   .btn-play,.btn-info,.btn-wishlist{justify-content:center;width:100%;padding:12px 20px;}
-  .toast-container{left:16px;right:16px;bottom:16px}
+  .toast-container{left:12px;right:12px;bottom:16px;align-items:stretch}
   .toast{min-width:auto;max-width:none}
   .admin-header h1{font-size:1.4rem}
   .auth-modal{padding:28px 20px}
@@ -1099,11 +1119,50 @@ async function api(path,opts={}){
 function getWishlist(){try{return JSON.parse(localStorage.getItem('skflip_wishlist')||'[]');}catch(e){return[];}}
 function saveWishlist(list){localStorage.setItem('skflip_wishlist',JSON.stringify(list));}
 function isInWishlist(movieId){return getWishlist().some(id=>id===movieId);}
-function toggleWishlist(movieId){
-  let list=getWishlist();const idx=list.indexOf(movieId);
-  if(idx>-1){list.splice(idx,1);showToast('Removed from wishlist','info');}
-  else{list.push(movieId);showToast('Added to wishlist','success');}
-  saveWishlist(list);updateAllWishlistUI();
+
+// ─── Sync wishlist from DB after login (merges local guest list into DB) ───
+async function syncWishlistFromDB(){
+  if(!state.user)return;
+  try{
+    const data=await api('/wishlist');
+    const dbIds=data.movieIds||[];
+    const localIds=getWishlist();
+    // Merge: union of DB + any local guest additions
+    const merged=[...new Set([...dbIds,...localIds])];
+    saveWishlist(merged);
+    // Push merged list back to DB if local had extras
+    if(localIds.some(id=>!dbIds.includes(id))){
+      await api('/wishlist',{method:'PUT',body:JSON.stringify({movieIds:merged})});
+    }
+    // Sync offer claim state
+    if(data.offerClaimed&&!state.offerClaimed){
+      state.offerClaimed=true;
+      localStorage.setItem('skflip_offer_claimed','true');
+    }
+    updateAllWishlistUI();
+    renderNav();
+    syncOfferButton();
+  }catch(e){console.warn('Wishlist sync failed:',e.message);}
+}
+
+// ─── Toggle wishlist: DB when logged in, localStorage for guests ───────────
+async function toggleWishlist(movieId){
+  if(!state.user){
+    // Guest mode — local only
+    let list=getWishlist();const idx=list.indexOf(movieId);
+    if(idx>-1){list.splice(idx,1);showToast('Removed from wishlist','info');}
+    else{list.push(movieId);showToast('❤️ Added to wishlist','success');}
+    saveWishlist(list);updateAllWishlistUI();renderNav();
+    return;
+  }
+  // Logged-in mode — sync with DB
+  try{
+    const data=await api('/wishlist/toggle/'+movieId,{method:'POST'});
+    saveWishlist(data.movieIds);
+    if(data.added)showToast('❤️ Added to wishlist','success');
+    else showToast('Removed from wishlist','info');
+    updateAllWishlistUI();renderNav();
+  }catch(e){showToast('Wishlist error: '+e.message,'error');}
 }
 function updateAllWishlistUI(){
   if(state.heroMovie){
@@ -1133,22 +1192,44 @@ function updateAllWishlistUI(){
 }
 function heroWishAction(){if(state.heroMovie)toggleWishlist(state.heroMovie._id);}
 
-function setAuth(token,user){state.token=token;state.user=user;localStorage.setItem('skflip_token',token);localStorage.setItem('skflip_user',JSON.stringify(user));renderNav();renderFooter();syncOfferButton();renderContinueWatching();}
-function clearAuth(){state.token=null;state.user=null;localStorage.removeItem('skflip_token');localStorage.removeItem('skflip_user');renderNav();renderFooter();syncOfferButton();renderContinueWatching();}
-function loadStoredAuth(){const t=localStorage.getItem('skflip_token');const u=localStorage.getItem('skflip_user');if(t&&u){try{state.token=t;state.user=JSON.parse(u);}catch(e){clearAuth();}}state.offerClaimed=localStorage.getItem('skflip_offer_claimed')==='true';}
+function setAuth(token,user){
+  state.token=token;state.user=user;
+  localStorage.setItem('skflip_token',token);
+  localStorage.setItem('skflip_user',JSON.stringify(user));
+  renderNav();renderFooter();syncOfferButton();renderContinueWatching();
+  // After login, sync wishlist from database (cross-device)
+  syncWishlistFromDB();
+}
+function clearAuth(){
+  state.token=null;state.user=null;
+  localStorage.removeItem('skflip_token');localStorage.removeItem('skflip_user');
+  renderNav();renderFooter();syncOfferButton();renderContinueWatching();
+}
+function loadStoredAuth(){
+  const t=localStorage.getItem('skflip_token');const u=localStorage.getItem('skflip_user');
+  if(t&&u){try{state.token=t;state.user=JSON.parse(u);}catch(e){clearAuth();}}
+  state.offerClaimed=localStorage.getItem('skflip_offer_claimed')==='true';
+  // Sync wishlist from DB on page load if already logged in
+  if(state.user){syncWishlistFromDB();}
+}
 
-function claimOffer(){
+async function claimOffer(){
   const btn=document.getElementById('claimOfferBtn');
-  if(btn.classList.contains('claimed'))return;
+  if(btn&&btn.classList.contains('claimed'))return;
   if(!state.user){
+    showToast('Please sign in to claim your free offer!','warning');
     openAuth('signup');
     return;
   }
+  // Optimistic UI update
   state.offerClaimed=true;
   localStorage.setItem('skflip_offer_claimed','true');
-  btn.classList.add('claimed');
-  btn.textContent='✓ Claimed';
-  showToast('🎉 You have claimed 3 months free successfully! Enjoy your premium experience.','success');
+  if(btn){btn.classList.add('claimed');btn.textContent='✓ Claimed';}
+  showToast('🎉 3 months free claimed! Enjoy your premium experience.','success');
+  // Persist to DB
+  try{
+    await api('/wishlist/claim',{method:'POST'});
+  }catch(e){console.warn('Claim persist failed:',e.message);}
 }
 
 function syncOfferButton(){
@@ -1156,9 +1237,14 @@ function syncOfferButton(){
   if(!btn)return;
   if(state.offerClaimed){
     btn.classList.add('claimed');
+    btn.classList.remove('needs-login');
     btn.textContent='✓ Claimed';
-  }else{
+  }else if(!state.user){
     btn.classList.remove('claimed');
+    btn.classList.add('needs-login');
+    btn.textContent='Sign In to Claim →';
+  }else{
+    btn.classList.remove('claimed','needs-login');
     btn.textContent='Claim Offer Now →';
   }
 }
@@ -1199,17 +1285,33 @@ function showAuthError(msg){const el=document.getElementById('authError');el.tex
 async function handleLogin(){
   const email=document.getElementById('loginEmail').value.trim();const pwd=document.getElementById('loginPassword').value;
   if(!email||!pwd){showAuthError('Please fill in all fields.');return;}
-  try{const data=await api('/auth/login',{method:'POST',body:JSON.stringify({email,password:pwd})});setAuth(data.token,data.user);closeAuth();showToast('Welcome back, '+data.user.name+'!','success');}
-  catch(e){showAuthError(e.message);}
+  const btn=document.getElementById('btnLogin');
+  btn.disabled=true;btn.textContent='Signing in…';
+  try{
+    const data=await api('/auth/login',{method:'POST',body:JSON.stringify({email,password:pwd})});
+    setAuth(data.token,data.user);closeAuth();
+    showToast('👋 Welcome back, '+data.user.name+'!','success');
+  }catch(e){
+    showAuthError(e.message);
+    showToast('Login failed: '+e.message,'error');
+  }finally{btn.disabled=false;btn.textContent='Sign In';}
 }
 async function handleSignup(){
   const name=document.getElementById('signupName').value.trim();const email=document.getElementById('signupEmail').value.trim();const pwd=document.getElementById('signupPassword').value;
   if(!name||!email||!pwd){showAuthError('Please fill in all fields.');return;}
   if(pwd.length<6){showAuthError('Password must be at least 6 characters.');return;}
-  try{const data=await api('/auth/signup',{method:'POST',body:JSON.stringify({name,email,password:pwd})});setAuth(data.token,data.user);closeAuth();showToast('Account created! Welcome, '+data.user.name+'!','success');}
-  catch(e){showAuthError(e.message);}
+  const btn=document.getElementById('btnSignup');
+  btn.disabled=true;btn.textContent='Creating account…';
+  try{
+    const data=await api('/auth/signup',{method:'POST',body:JSON.stringify({name,email,password:pwd})});
+    setAuth(data.token,data.user);closeAuth();
+    showToast('🎉 Account created! Welcome, '+data.user.name+'!','success');
+  }catch(e){
+    showAuthError(e.message);
+    showToast('Sign up failed: '+e.message,'error');
+  }finally{btn.disabled=false;btn.textContent='Create Account';}
 }
-function handleLogout(){clearAuth();closeUserMenu();showToast('Signed out','info');}
+function handleLogout(){clearAuth();closeUserMenu();showToast('Signed out. See you soon!','info');}
 
 async function fetchMovies(type){
   try{
@@ -1926,8 +2028,9 @@ function switchPrimeTab(tab){
   else if(tab==='details'||tab==='details2'){content.innerHTML=buildMovieDetails(movie);}
 }
 
-function toggleWishlistPrime(movieId){
-  toggleWishlist(movieId);
+async function toggleWishlistPrime(movieId){
+  await toggleWishlist(movieId);
+  // updateAllWishlistUI is called inside toggleWishlist, but also update the prime btn explicitly
   const btn=document.getElementById('primeWishBtn');
   if(!btn)return;
   const inW=isInWishlist(movieId);
@@ -1991,11 +2094,18 @@ function closeDetail(){
 function openWishlist(){
   const overlay=document.getElementById('wishlistOverlay');const inner=document.getElementById('wishlistInner');
   const wishIds=getWishlist();const wishMovies=wishIds.map(id=>state.allContent.find(m=>m._id===id)).filter(Boolean);
-  inner.innerHTML=`<div class="wishlist-header"><div><h1>My <span>Wishlist</span></h1><div class="wishlist-count">${wishMovies.length} title${wishMovies.length!==1?'s':''}</div></div><button class="wishlist-close-btn" onclick="closeWishlist()">← Back</button></div><div class="wishlist-grid" id="wishlistGrid"></div>`;
+  const syncBadge=state.user
+    ?`<div style="display:inline-flex;align-items:center;gap:5px;background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);color:var(--green);padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:600;margin-top:4px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg> Synced across devices
+      </div>`
+    :`<div style="display:inline-flex;align-items:center;gap:5px;background:rgba(224,168,48,.1);border:1px solid rgba(224,168,48,.3);color:var(--gold);padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:600;margin-top:4px;cursor:pointer" onclick="closeWishlist();openAuth('login')">
+        Sign in to sync across devices →
+      </div>`;
+  inner.innerHTML=`<div class="wishlist-header"><div><h1>My <span>Wishlist</span></h1><div class="wishlist-count">${wishMovies.length} title${wishMovies.length!==1?'s':''}</div>${syncBadge}</div><button class="wishlist-close-btn" onclick="closeWishlist()">← Back</button></div><div class="wishlist-grid" id="wishlistGrid"></div>`;
   const grid=document.getElementById('wishlistGrid');
   if(wishMovies.length===0){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;padding:60px 20px"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>Your wishlist is empty. Browse movies and tap the heart icon to save them here.</span></div>`;}
   else{wishMovies.forEach(movie=>{const card=document.createElement('div');card.className='wishlist-card';const imgSrc=movie.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');const genres=movie._genres_normalized||normalizeGenres(movie.genres);
-    card.innerHTML=`<button class="wishlist-remove" onclick="event.stopPropagation();toggleWishlist('${movie._id}');openWishlist()" title="Remove">✕</button>
+    card.innerHTML=`<button class="wishlist-remove" onclick="event.stopPropagation();toggleWishlist('${movie._id}').then(()=>openWishlist())" title="Remove">✕</button>
       ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${movie.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center>${this.alt}</div>'"/>`
       :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center">${movie.title}</div>`}
       <div style="padding:10px;background:var(--surface)"><div style="font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${movie.title}</div><div style="font-size:.68rem;color:var(--muted);margin-top:2px">${movie.releaseYear||''}${genres[0]?' · '+genres[0]:''}</div></div>`;
@@ -2860,7 +2970,7 @@ function saveEp(id){
   ep._editing      = false;
   if(ep.id.startsWith('ep_new')) ep.id = epId();
   renderEpManager();
-  showToast('"'+title+'" saved!','success');
+  showToast('✅ Episode "'+title+'" saved!','success');
 }
 
 function deleteEp(id){
@@ -2983,11 +3093,24 @@ async function refreshHomeData(){
 }
 
 // ═══ Toast ═══
-function showToast(msg,type='info'){
-  const c=document.getElementById('toastContainer');const t=document.createElement('div');
-  t.className='toast '+type;const icons={success:'✓',error:'✕',info:'ℹ'};
-  t.innerHTML=`<span style="font-weight:700">${icons[type]||'ℹ'}</span><span>${msg}</span>`;
-  c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},4000);
+function showToast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  const icons = { success:'✓', error:'✕', info:'ℹ', warning:'⚠' };
+  t.innerHTML = `
+    <div class="toast-accent"></div>
+    <div class="toast-icon-wrap">${icons[type] || 'ℹ'}</div>
+    <div class="toast-body"><div class="toast-msg">${msg}</div></div>
+    <button class="toast-close-btn" onclick="this.closest('.toast').remove()" aria-label="Dismiss">✕</button>
+    <div class="toast-progress"></div>`;
+  c.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity .35s ease, transform .35s ease';
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(30px)';
+    setTimeout(() => t.remove(), 370);
+  }, 4500);
 }
 
 // ═══ Navigation ═══
@@ -3021,7 +3144,7 @@ async function init(){
   // Push a baseline history entry so mobile back never navigates away from the page.
   // All overlay pushState entries sit on top of this. Popping back to it is a no-op.
   history.replaceState({skflip:'home'}, '', location.href);
-  loadStoredAuth();renderNav();renderFooter();showSkeletons();
+  loadStoredAuth();renderNav();renderFooter();syncOfferButton();showSkeletons();
   const[movies,series,originals]=await Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
   state.movies=movies;state.series=series;state.originals=originals;
   const seen=new Set();
