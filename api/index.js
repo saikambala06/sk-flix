@@ -155,9 +155,17 @@ const MovieSchema = new mongoose.Schema({
   isPublished:       { type: Boolean, default: true }
 }, { timestamps: true });
 
+// Wishlist Schema — stores per-user wishlist + offer claim state
+const WishlistSchema = new mongoose.Schema({
+  userId:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  movieIds:     [{ type: String }],
+  offerClaimed: { type: Boolean, default: false }
+}, { timestamps: true });
+
 // Use existing model if already compiled (prevents OverwriteModelError in serverless)
-const User = mongoose.models.User || mongoose.model('User', UserSchema);
-const Movie = mongoose.models.Movie || mongoose.model('Movie', MovieSchema);
+const User     = mongoose.models.User     || mongoose.model('User',     UserSchema);
+const Movie    = mongoose.models.Movie    || mongoose.model('Movie',    MovieSchema);
+const Wishlist = mongoose.models.Wishlist || mongoose.model('Wishlist', WishlistSchema);
 
 // -------------------------------------------------------------
 // MIDDLEWARE: Ensure DB is connected before every API call
@@ -178,6 +186,20 @@ async function ensureDB(req, res, next) {
 
 // Apply DB middleware to ALL routes
 app.use(ensureDB);
+
+// -------------------------------------------------------------
+// JWT AUTH MIDDLEWARE (used on protected routes)
+// -------------------------------------------------------------
+function requireAuth(req, res, next) {
+  const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token.' });
+  }
+}
 
 // -------------------------------------------------------------
 // AUTHENTICATION ROUTES
@@ -468,6 +490,59 @@ app.delete('/api/admin/users/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// -------------------------------------------------------------
+// WISHLIST ROUTES (Authenticated) — cross-device sync
+// -------------------------------------------------------------
+
+// GET  /api/wishlist  — fetch wishlist + offerClaimed for current user
+app.get('/api/wishlist', requireAuth, async (req, res) => {
+  try {
+    let w = await Wishlist.findOne({ userId: req.user.id }).lean();
+    if (!w) w = { movieIds: [], offerClaimed: false };
+    res.json({ movieIds: w.movieIds || [], offerClaimed: w.offerClaimed || false });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/wishlist/toggle/:movieId  — add or remove a single movie
+app.post('/api/wishlist/toggle/:movieId', requireAuth, async (req, res) => {
+  try {
+    const { movieId } = req.params;
+    let w = await Wishlist.findOne({ userId: req.user.id });
+    if (!w) w = new Wishlist({ userId: req.user.id, movieIds: [] });
+    const idx = w.movieIds.indexOf(movieId);
+    if (idx > -1) { w.movieIds.splice(idx, 1); }
+    else           { w.movieIds.push(movieId); }
+    await w.save();
+    res.json({ movieIds: w.movieIds, added: idx === -1 });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT  /api/wishlist  — replace full wishlist (used for merging on login)
+app.put('/api/wishlist', requireAuth, async (req, res) => {
+  try {
+    const { movieIds } = req.body;
+    if (!Array.isArray(movieIds)) return res.status(400).json({ error: 'movieIds must be an array.' });
+    const w = await Wishlist.findOneAndUpdate(
+      { userId: req.user.id },
+      { $set: { movieIds } },
+      { upsert: true, new: true }
+    ).lean();
+    res.json({ movieIds: w.movieIds });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/wishlist/claim  — mark the promotional offer as claimed
+app.post('/api/wishlist/claim', requireAuth, async (req, res) => {
+  try {
+    const w = await Wishlist.findOneAndUpdate(
+      { userId: req.user.id },
+      { $set: { offerClaimed: true } },
+      { upsert: true, new: true }
+    ).lean();
+    res.json({ offerClaimed: w.offerClaimed });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // -------------------------------------------------------------
