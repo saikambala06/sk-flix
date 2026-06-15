@@ -789,16 +789,6 @@ body.blur-bg #home-screen {
   transition: all 400ms ease;
 }
 
-
-/* ChatGPT Patch: Mobile wishlist visibility */
-@media (max-width:768px){
-  .card-wish-btn{
-    opacity:1 !important;
-    transform:translateX(-50%) translateY(0) !important;
-    display:flex !important;
-  }
-}
-
 </style>
 </head>
 <body>
@@ -1007,6 +997,19 @@ body.blur-bg #home-screen {
   </div>
 </div>
 
+<!-- ── Sign-Out Confirmation Modal ── -->
+<div class="overlay" id="signoutOverlay" onclick="if(event.target===this)closeSignoutModal()">
+  <div class="auth-modal" style="max-width:380px;text-align:center;padding:44px 36px">
+    <div style="width:64px;height:64px;background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 20px">🚪</div>
+    <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:10px;color:var(--text)">Sign Out?</h3>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:32px;line-height:1.65">You'll need to sign back in to access your wishlist and continue watching where you left off.</p>
+    <div style="display:flex;gap:12px">
+      <button class="btn-confirm-cancel" onclick="closeSignoutModal()" style="flex:1;border-radius:99px;padding:12px 10px;font-size:.92rem;font-weight:600;cursor:pointer">Keep Watching</button>
+      <button class="btn-confirm-del" onclick="confirmSignout()" style="flex:1;border-radius:99px;padding:12px 10px;font-size:.92rem">Sign Out</button>
+    </div>
+  </div>
+</div>
+
 <div class="detail-overlay-prime" id="detailOverlay">
   <div class="prime-detail-wrap" id="detailBody"></div>
 </div>
@@ -1209,6 +1212,11 @@ function setAuth(token,user){
   renderNav();renderFooter();syncOfferButton();renderContinueWatching();
   // After login, sync wishlist from database (cross-device)
   syncWishlistFromDB();
+  // Auto-claim offer if user clicked "Claim" before being signed in
+  if(sessionStorage.getItem('skflip_pending_claim')==='1'){
+    sessionStorage.removeItem('skflip_pending_claim');
+    setTimeout(()=>claimOffer(),400);
+  }
 }
 function clearAuth(){
   state.token=null;state.user=null;
@@ -1227,8 +1235,9 @@ async function claimOffer(){
   const btn=document.getElementById('claimOfferBtn');
   if(btn&&btn.classList.contains('claimed'))return;
   if(!state.user){
-    showToast('Please sign in to claim your free offer!','warning');
-    openAuth('signup');
+    // Mark intent so we auto-claim right after the user signs in
+    sessionStorage.setItem('skflip_pending_claim','1');
+    openAuth('login');
     return;
   }
   // Optimistic UI update
@@ -1236,7 +1245,7 @@ async function claimOffer(){
   localStorage.setItem('skflip_offer_claimed','true');
   if(btn){btn.classList.add('claimed');btn.textContent='✓ Claimed';}
   showToast('🎉 3 months free claimed! Enjoy your premium experience.','success');
-  // Persist to DB
+  // Persist to DB so it appears on all devices
   try{
     await api('/wishlist/claim',{method:'POST'});
   }catch(e){console.warn('Claim persist failed:',e.message);}
@@ -1321,7 +1330,25 @@ async function handleSignup(){
     showToast('Sign up failed: '+e.message,'error');
   }finally{btn.disabled=false;btn.textContent='Create Account';}
 }
-function handleLogout(){clearAuth();closeUserMenu();showToast('Signed out. See you soon!','info');}
+function handleLogout(){openSignoutModal();}
+function openSignoutModal(){
+  closeUserMenu();
+  document.getElementById('signoutOverlay').classList.add('active');
+  document.body.style.overflow='hidden';
+  _navPush('signout');
+}
+function closeSignoutModal(){
+  document.getElementById('signoutOverlay').classList.remove('active');
+  document.body.style.overflow='';
+}
+function confirmSignout(){
+  closeSignoutModal();
+  // Clear wishlist local cache so next user starts fresh
+  localStorage.removeItem('skflip_wishlist');
+  localStorage.removeItem('skflip_offer_claimed');
+  clearAuth();
+  showToast('Signed out successfully. See you soon! 👋','info');
+}
 
 async function fetchMovies(type){
   try{
@@ -2142,7 +2169,8 @@ function _rawClose(id){
     auth:     'authOverlay',
     admin:    'adminOverlay',
     search:   'searchOverlay',
-    wishlist: 'wishlistOverlay'
+    wishlist: 'wishlistOverlay',
+    signout:  'signoutOverlay'
   };
   const el = overlayIds[id] ? document.getElementById(overlayIds[id]) : null;
 
@@ -2188,7 +2216,7 @@ function _rawClose(id){
       '<div class="search-hint"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Start typing to search…</div>';
   }
 
-  const anyOpen = ['playerOverlay','detailOverlay','authOverlay','adminOverlay','searchOverlay','wishlistOverlay']
+  const anyOpen = ['playerOverlay','detailOverlay','authOverlay','adminOverlay','searchOverlay','wishlistOverlay','signoutOverlay']
     .some(oid => {
       const o = document.getElementById(oid);
       return o && o.classList.contains('active') && !o.classList.contains('closing');
@@ -2202,6 +2230,7 @@ window.addEventListener('popstate', e => {
   if(document.getElementById('adminOverlay').classList.contains('active'))    { _rawClose('admin');    return; }
   if(document.getElementById('searchOverlay').classList.contains('active'))   { _rawClose('search');   return; }
   if(document.getElementById('wishlistOverlay').classList.contains('active')) { _rawClose('wishlist'); return; }
+  if(document.getElementById('signoutOverlay').classList.contains('active'))  { _rawClose('signout'); return; }
   if(document.getElementById('authOverlay').classList.contains('active'))     { _rawClose('auth');     return; }
 });
 
