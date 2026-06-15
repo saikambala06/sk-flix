@@ -558,3 +558,29 @@ app.get('/api/health', (req, res) => {
 
 // Export for Vercel Serverless
 module.exports = app;
+
+
+// ===== Added by ChatGPT =====
+function handleOfferClaim(currentUser, openAuthModal, claimBtn){
+    if(!currentUser){
+        openAuthModal();
+        return;
+    }
+    fetch('/api/wishlist/claim',{
+        method:'POST',
+        headers:{Authorization:`Bearer ${localStorage.getItem("token")}`}
+    }).then(r=>r.json()).then(()=>{
+        claimBtn.textContent='Claimed';
+        claimBtn.disabled=true;
+        claimBtn.classList.add('claimed');
+    });
+}
+
+function handleSignOut(){
+    const confirmed = confirm('Do you really want to sign out?');
+    if(!confirmed) return false;
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return true;
+}
+// ===== End Added =====
