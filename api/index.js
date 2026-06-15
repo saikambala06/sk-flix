@@ -584,31 +584,3 @@ function handleSignOut(){
     return true;
 }
 // ===== End Added =====
-
-
-// ChatGPT Patch: Auth-required wishlist and offer claim
-function requireLoginForWishlistOrClaim(){
-  const token = localStorage.getItem('token');
-  if(!token){
-    const authModal = document.querySelector('.overlay');
-    if(authModal) authModal.classList.add('active');
-    return false;
-  }
-  return true;
-}
-
-document.addEventListener('click',function(e){
-  const wishBtn = e.target.closest('.card-wish-btn,.btn-wishlist');
-  if(wishBtn && !localStorage.getItem('token')){
-    e.preventDefault();
-    e.stopPropagation();
-    requireLoginForWishlistOrClaim();
-  }
-
-  const claimBtn = e.target.closest('.btn-promo');
-  if(claimBtn && !localStorage.getItem('token')){
-    e.preventDefault();
-    e.stopPropagation();
-    requireLoginForWishlistOrClaim();
-  }
-},true);
