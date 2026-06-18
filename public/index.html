@@ -487,7 +487,7 @@ img{display:block;max-width:100%}
 #playerOverlay .poster-overlay{
   position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:linear-gradient(135deg,rgba(10,10,12,.86),rgba(26,26,34,.9));
-  z-index:5;transition:opacity .45s,visibility .45s
+  z-index:5;transition:opacity .45s,visibility .45s;cursor:pointer
 }
 #playerOverlay .poster-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
 #playerOverlay .poster-overlay .big-play{
@@ -505,26 +505,138 @@ img{display:block;max-width:100%}
 #playerOverlay .poster-overlay .poster-sub{color:var(--cine-muted);font-size:.9rem;margin-top:6px}
 #playerOverlay .center-indicator{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
-  width:70px;height:70px;border-radius:50%;background:rgba(0,0,0,.58);
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;
-  pointer-events:none;z-index:7;opacity:0
+  width:76px;height:76px;border-radius:50%;background:rgba(0,0,0,.52);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;font-size:1.7rem;color:#fff;
+  pointer-events:none;z-index:7;opacity:0;
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
 }
-#playerOverlay .center-indicator.show{animation:centerPop .5s ease-out forwards}
+#playerOverlay .center-indicator.show{animation:centerPop .55s cubic-bezier(0.34,1.56,0.64,1) forwards}
 @keyframes centerPop{
-  0%{transform:translate(-50%,-50%) scale(.4);opacity:1}
-  50%{transform:translate(-50%,-50%) scale(1.12);opacity:1}
+  0%{transform:translate(-50%,-50%) scale(.3);opacity:0}
+  40%{transform:translate(-50%,-50%) scale(1.08);opacity:1}
+  70%{transform:translate(-50%,-50%) scale(.96);opacity:1}
   100%{transform:translate(-50%,-50%) scale(1);opacity:0}
 }
+/* ── Persistent Center Play/Pause Button ── */
+#playerOverlay .center-play-overlay{z-index:30;
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:7;
+  opacity:0;pointer-events:none;
+  transition:opacity .25s cubic-bezier(.4,0,.2,1),transform .25s cubic-bezier(.4,0,.2,1)
+}
+#playerOverlay .player-wrapper:not(.controls-hidden) .center-play-overlay{z-index:30;
+  opacity:1;pointer-events:all
+}
+#playerOverlay .center-play-overlay .center-play-circle{
+  pointer-events:auto;
+}
+#playerOverlay .player-wrapper.controls-hidden .center-play-overlay{z-index:30;
+  opacity:0;pointer-events:none
+}
+/* While the "Ready to watch" poster is showing, the persistent center play/pause
+   button must not sit on top of the poster's own play button — it was stealing
+   clicks from the outer edge of the poster's big-play circle. */
+#playerOverlay .poster-overlay:not(.hidden) ~ .center-play-overlay{z-index:30;
+  opacity:0!important;pointer-events:none!important
+}
+#playerOverlay .center-play-circle{
+  width:82px;height:82px;border-radius:50%;
+  background:rgba(0,0,0,.62);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:2px solid rgba(255,255,255,.22);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.75rem;color:#fff;cursor:pointer;
+  box-shadow:0 8px 36px rgba(0,0,0,.55),0 0 0 0 rgba(255,255,255,.05);
+  transition:transform .18s,background .18s,border-color .18s,box-shadow .18s;
+}
+#playerOverlay .center-play-circle:hover{
+  background:rgba(20,20,28,.8);border-color:rgba(255,255,255,.45);
+  transform:scale(1.07);
+  box-shadow:0 10px 44px rgba(0,0,0,.65),0 0 0 8px rgba(255,255,255,.06)
+}
+#playerOverlay .center-play-circle:active{transform:scale(.93)}
+#playerOverlay .center-play-circle .cp-icon{pointer-events:none;line-height:1}
 #playerOverlay .skip-indicator{
   position:absolute;top:50%;transform:translateY(-50%);
   background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  padding:10px 18px;border-radius:10px;font-size:.9rem;font-weight:700;
-  display:flex;align-items:center;gap:8px;pointer-events:none;z-index:7;opacity:0;transition:opacity .15s
+  padding:14px 22px;border-radius:50px;font-size:.95rem;font-weight:700;
+  display:flex;align-items:center;gap:8px;pointer-events:none;z-index:7;
+  opacity:0;transition:opacity .18s ease;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 4px 24px rgba(0,0,0,.45);
 }
-#playerOverlay .skip-indicator.left{left:15%}
-#playerOverlay .skip-indicator.right{right:15%}
+#playerOverlay .skip-indicator.left{left:12%}
+#playerOverlay .skip-indicator.right{right:12%}
 #playerOverlay .skip-indicator.show{opacity:1}
+/* Ripple zones for double-click visual feedback */
+#playerOverlay .seek-ripple{
+  position:absolute;top:0;bottom:0;width:33.33%;pointer-events:none;z-index:5;
+  display:flex;align-items:center;justify-content:center;opacity:0;
+  transition:opacity .15s;
+}
+#playerOverlay .seek-ripple.left{left:0;background:radial-gradient(ellipse at left center,rgba(255,255,255,.13) 0%,transparent 70%);}
+#playerOverlay .seek-ripple.right{right:0;background:radial-gradient(ellipse at right center,rgba(255,255,255,.13) 0%,transparent 70%);}
+#playerOverlay .seek-ripple.flash{animation:seekFlash .42s cubic-bezier(0.4,0,0.2,1) forwards;}
+/* ── Next Episode Overlay ── */
+#playerOverlay .next-ep-overlay{
+  position:absolute;bottom:90px;right:20px;z-index:8;
+  display:flex;flex-direction:column;align-items:flex-end;gap:10px;
+  opacity:0;transform:translateY(14px);
+  transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1);
+  pointer-events:none
+}
+#playerOverlay .next-ep-overlay.show{opacity:1;transform:translateY(0);pointer-events:all}
+#playerOverlay .next-ep-info{
+  text-align:right;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.12);border-radius:10px;
+  padding:10px 14px;max-width:260px
+}
+#playerOverlay .next-ep-label{
+  font-size:.68rem;font-weight:700;letter-spacing:1.2px;
+  text-transform:uppercase;color:var(--cine-gold);margin-bottom:3px
+}
+#playerOverlay .next-ep-title{
+  font-size:.88rem;font-weight:600;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px
+}
+#playerOverlay .next-ep-btn{
+  display:flex;align-items:center;gap:9px;
+  background:var(--cine-gold);color:#000;
+  border:none;border-radius:50px;padding:12px 22px;
+  font-family:var(--cine-font);font-size:.92rem;font-weight:800;
+  cursor:pointer;box-shadow:0 6px 28px rgba(240,178,50,.45);
+  transition:transform .18s,box-shadow .18s,background .18s;
+  white-space:nowrap
+}
+#playerOverlay .next-ep-btn:hover{
+  background:#f5c842;transform:translateY(-2px);
+  box-shadow:0 10px 36px rgba(240,178,50,.6)
+}
+#playerOverlay .next-ep-btn:active{transform:scale(.96)}
+#playerOverlay .next-ep-btn i{font-size:.85rem}
+@keyframes nextEpPulse{
+  0%,100%{box-shadow:0 6px 28px rgba(240,178,50,.45)}
+  50%{box-shadow:0 6px 36px rgba(240,178,50,.75)}
+}
+#playerOverlay .next-ep-overlay.show .next-ep-btn{animation:nextEpPulse 2s ease-in-out infinite}
+@media(max-width:600px){
+  #playerOverlay .next-ep-overlay{bottom:80px;right:12px}
+  #playerOverlay .next-ep-btn{padding:10px 16px;font-size:.82rem}
+@media(max-width:600px){
+#playerOverlay .next-ep-overlay{left:50%;right:auto;bottom:70px;transform:translate(-50%,20px);max-width:92vw;text-align:center;}
+#playerOverlay .next-ep-overlay.show{transform:translate(-50%,0);}
+#playerOverlay .next-ep-title{font-size:.9rem;}
+}
+@media(min-width:601px){
+#playerOverlay .next-ep-overlay{bottom:90px;right:24px;}
+}
+
+}
+@keyframes seekFlash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
 #playerOverlay .controls-container{
   position:absolute;bottom:0;left:0;right:0;z-index:6;
   background:linear-gradient(to top,rgba(0,0,0,.93),rgba(0,0,0,.62) 60%,transparent);
@@ -1299,7 +1411,7 @@ body.blur-bg #home-screen {
       </button>
     </div>
 
-    <div class="poster-overlay" id="posterOverlay">
+    <div class="poster-overlay" id="posterOverlay" onclick="event.stopPropagation();togglePlay()">
       <div class="big-play"><i class="fas fa-play" style="margin-left:4px"></i></div>
       <div class="poster-title" id="posterTitle">SkFlip</div>
       <div class="poster-sub" id="posterSub">Ready to watch</div>
@@ -1313,8 +1425,17 @@ body.blur-bg #home-screen {
       <i class="fas fa-play"></i>
     </div>
 
+    <!-- Persistent center play/pause button (visible while controls are shown) -->
+    <div class="center-play-overlay" id="centerPlayOverlay">
+      <div class="center-play-circle" id="centerPlayCircle" onclick="togglePlay();event.stopPropagation()">
+        <i class="fas fa-play cp-icon" id="centerPlayIcon" style="margin-left:3px"></i>
+      </div>
+    </div>
+
     <div class="skip-indicator left" id="skipLeft"><i class="fas fa-backward"></i> 10s</div>
     <div class="skip-indicator right" id="skipRight"><i class="fas fa-forward"></i> 10s</div>
+    <div class="seek-ripple left" id="seekRippleLeft"></div>
+    <div class="seek-ripple right" id="seekRippleRight"></div>
 
     <div class="subtitle-display" id="subtitleDisplay" style="display:none"><span></span></div>
     <div class="player-toast-container" id="playerToastContainer"></div>
@@ -1359,9 +1480,6 @@ body.blur-bg #home-screen {
 
         <button class="ctrl-btn" id="btnSubtitles" title="Subtitles" aria-label="Subtitles">
           <i class="fas fa-closed-captioning"></i>
-        </button>
-        <button class="ctrl-btn" id="btnLoop" title="Loop" aria-label="Loop">
-          <i class="fas fa-sync-alt"></i>
         </button>
         <button class="ctrl-btn btn-optional" id="btnScreenshot" title="Screenshot" aria-label="Take screenshot">
           <i class="fas fa-camera"></i>
@@ -1451,6 +1569,19 @@ body.blur-bg #home-screen {
         </div>
       </div>
     </div>
+
+    <!-- ── Next Episode Overlay ── -->
+    <div class="next-ep-overlay" id="nextEpOverlay">
+      <div class="next-ep-info" id="nextEpInfo">
+        <div class="next-ep-label">Up Next</div>
+        <div class="next-ep-title" id="nextEpTitle">Next Episode</div>
+      </div>
+      <button class="next-ep-btn" id="nextEpBtn" onclick="playNextEpisode()">
+        <i class="fas fa-forward"></i>
+        Next Episode
+      </button>
+    </div>
+
   </div>
 </div>
 <div class="admin-overlay" id="adminOverlay">
@@ -1780,6 +1911,17 @@ function emptyState(msg){return `<div class="empty-state"><svg width="48" height
 
 const HEART_SVG=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 
+function openCardPlayer(id){
+  const movie=state.allContent.find(m=>m._id===id);
+  if(!movie){showToast('Content not found.','error');return;}
+  if(movie.type==='series'||movie.type==='original'){
+    state.currentMovie=movie;
+    playFirstEpisode();
+  }else{
+    openPlayer(movie);
+  }
+}
+
 function createCard(item){
   const card=document.createElement('div');card.className='movie-card';
   const typeClass=item.type==='original'?'original':item.type==='series'?'series':'movie';
@@ -1794,7 +1936,7 @@ function createCard(item){
     ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${item.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);padding:8px;text-align:center>${this.alt}</div>'"/>`
     :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);padding:8px;text-align:center">${item.title}</div>`}
     <div class="card-overlay">
-      <div class="card-play-btn" onclick="event.stopPropagation();openPlayer(state.allContent.find(m=>m._id==='${item._id}'))"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="card-play-btn" onclick="event.stopPropagation();openCardPlayer('${item._id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
       <div class="card-year">${item.releaseYear||''}${genreTag?' · '+genreTag:''}</div>
     </div>`;
   const belowTitle=document.createElement('div');
@@ -2156,7 +2298,7 @@ function createCardHTML(item){
     ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${item.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center>${this.alt}</div>'"/>`
     :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center">${item.title}</div>`}
     <div class="card-overlay">
-      <div class="card-play-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="card-play-btn" onclick="event.stopPropagation();_rawClose('search');openCardPlayer('${item._id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
       <div class="card-title">${item.title}</div>
       <div class="card-year">${item.releaseYear||''}${genres[0]?' · '+genres[0]:''}</div>
     </div></div>`;
@@ -2590,7 +2732,6 @@ const btnVolume=document.getElementById('btnVolume');
 const volumeSlider=document.getElementById('volumeSlider');
 const speedLabel=document.getElementById('speedLabel');
 const btnSubtitles=document.getElementById('btnSubtitles');
-const btnLoop=document.getElementById('btnLoop');
 const btnScreenshot=document.getElementById('btnScreenshot');
 const btnPip=document.getElementById('btnPip');
 const btnSettings=document.getElementById('btnSettings');
@@ -2697,6 +2838,12 @@ function _syncPlayIcons(paused){
   const icon=btnPlay.querySelector('i');
   icon.className=paused?'fas fa-play':'fas fa-pause';
   isPlaying=!paused;
+  // Sync the persistent center button
+  const cpIcon=document.getElementById('centerPlayIcon');
+  if(cpIcon){
+    cpIcon.className=paused?'fas fa-play cp-icon':'fas fa-pause cp-icon';
+    cpIcon.style.marginLeft=paused?'3px':'0';
+  }
 }
 
 function togglePlay(){
@@ -2715,8 +2862,15 @@ function skipVideo(seconds){
   if(!video.duration)return;
   video.currentTime=Math.max(0,Math.min(video.duration,video.currentTime+seconds));
   const indicator=seconds<0?skipLeft:skipRight;
+  const ripple=seconds<0?document.getElementById('seekRippleLeft'):document.getElementById('seekRippleRight');
   indicator.classList.add('show');
-  setTimeout(()=>indicator.classList.remove('show'),520);
+  if(ripple){
+    ripple.classList.remove('flash');
+    void ripple.offsetWidth; // reflow to restart animation
+    ripple.classList.add('flash');
+  }
+  clearTimeout(indicator._hideTimer);
+  indicator._hideTimer=setTimeout(()=>indicator.classList.remove('show'),550);
 }
 
 function updateVolume(value){
@@ -2768,17 +2922,21 @@ function seekTo(e){
 }
 
 function showControls(){
-  wrapper.classList.remove('controls-hidden');
   clearTimeout(controlsTimeout);
-  if(isPlaying&&!settingsOpen){
-    controlsTimeout=setTimeout(()=>wrapper.classList.add('controls-hidden'),3000);
-  }
+  wrapper.classList.remove('controls-hidden');
+}
+
+function scheduleControlsAutoHide(){
+  // Controls remain visible after a user click/tap. They only hide automatically
+  // when playback starts again.
+  clearTimeout(controlsTimeout);
 }
 
 function closeSettingsPanel(){
   settingsOpen=false;
   settingsPanel.classList.remove('show');
   showSettingsMain();
+  scheduleControlsAutoHide();
 }
 
 function showSubMenu(name){
@@ -2916,15 +3074,17 @@ function resetPlayerPanels(){
 video.addEventListener('play',()=>{
   poster.classList.add('hidden');
   _syncPlayIcons(false);
-  showCenterIcon('fas fa-pause');
-  showControls();
+  // Resuming/starting playback hides the controls; the user can click/tap
+  // anywhere on the video to bring them back for 10s.
+  clearTimeout(controlsTimeout);
+  wrapper.classList.add('controls-hidden');
+  hideNextEpOverlay();
 });
 
 video.addEventListener('pause',()=>{
   _syncPlayIcons(true);
-  showCenterIcon('fas fa-play');
-  wrapper.classList.remove('controls-hidden');
   clearTimeout(controlsTimeout);
+  wrapper.classList.remove('controls-hidden');
 });
 
 video.addEventListener('timeupdate',()=>{
@@ -2933,9 +3093,9 @@ video.addEventListener('timeupdate',()=>{
     state._lastSaveTime=video.currentTime;
     saveWatchProgress(state.currentMovie,video.currentTime,video.duration||0);
   }
-  if(_nextEpData&&!_nextEpPrompted&&video.duration&&isFinite(video.duration)&&video.currentTime/video.duration>.9){
+  if(_nextEpData&&!_nextEpPrompted&&video.duration&&isFinite(video.duration)&&(video.duration-video.currentTime)<=20&&video.currentTime>0){
     _nextEpPrompted=true;
-    showPlayerToast('Next episode ready');
+    showNextEpOverlay();
   }
   const skipBtnVisible=_skipStart>=0&&_skipEnd>_skipStart&&video.currentTime>=_skipStart&&video.currentTime<_skipEnd;
   if(skipBtnVisible)showPlayerToast('Press I to skip intro');
@@ -2958,6 +3118,9 @@ video.addEventListener('ended',()=>{
   if(!isLooping){
     btnPlay.querySelector('i').className='fas fa-redo';
     wrapper.classList.remove('controls-hidden');
+    if(_nextEpData){
+      showNextEpOverlay();
+    }
   }
 });
 
@@ -2972,14 +3135,6 @@ btnSubtitles.addEventListener('click',e=>{
   if(subtitlesOn){setSubtitle('off');return;}
   const tracks=state.playerHls&&state.playerHls.subtitleTracks?state.playerHls.subtitleTracks:[];
   setSubtitle(tracks.length?0:'ext:On');
-});
-
-btnLoop.addEventListener('click',e=>{
-  e.stopPropagation();
-  isLooping=!isLooping;
-  video.loop=isLooping;
-  btnLoop.classList.toggle('active',isLooping);
-  showPlayerToast('Loop: '+(isLooping?'On':'Off'));
 });
 
 btnScreenshot.addEventListener('click',e=>{
@@ -3042,6 +3197,9 @@ btnSettings.addEventListener('click',e=>{
     populateQualityLevels();
     populateSubsList();
     populateAudioTracks();
+    clearTimeout(controlsTimeout);
+  }else{
+    scheduleControlsAutoHide();
   }
   showSettingsMain();
   showControls();
@@ -3078,42 +3236,37 @@ progressArea.addEventListener('mousemove',e=>{
 progressArea.addEventListener('mousedown',e=>{
   isDragging=true;
   progressArea.classList.add('dragging');
+  clearTimeout(controlsTimeout);
   seekTo(e);
 });
 document.addEventListener('mousemove',e=>{if(isDragging)seekTo(e);});
-document.addEventListener('mouseup',()=>{isDragging=false;progressArea.classList.remove('dragging');});
-progressArea.addEventListener('touchstart',e=>{isDragging=true;progressArea.classList.add('dragging');seekTo(e);},{passive:true});
+document.addEventListener('mouseup',()=>{if(!isDragging)return;isDragging=false;progressArea.classList.remove('dragging');scheduleControlsAutoHide();});
+progressArea.addEventListener('touchstart',e=>{isDragging=true;progressArea.classList.add('dragging');clearTimeout(controlsTimeout);seekTo(e);},{passive:true});
 document.addEventListener('touchmove',e=>{if(isDragging)seekTo(e);},{passive:true});
-document.addEventListener('touchend',()=>{isDragging=false;progressArea.classList.remove('dragging');});
+document.addEventListener('touchend',()=>{if(!isDragging)return;isDragging=false;progressArea.classList.remove('dragging');scheduleControlsAutoHide();});
 
-wrapper.addEventListener('mousemove',showControls);
-wrapper.addEventListener('touchstart',showControls,{passive:true});
 wrapper.addEventListener('click',e=>{
-  if(e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.shortcuts-overlay')||e.target.closest('.cine-topbar'))return;
-  if(clickTimer){
-    clearTimeout(clickTimer);
-    clickTimer=null;
-    toggleFullscreen();
+  if(e.target.closest('.center-play-circle')||e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.shortcuts-overlay')||e.target.closest('.cine-topbar')||e.target.closest('.next-ep-overlay')||e.target.closest('.poster-overlay'))return;
+  // Video surface tap only toggles controls. It never pauses/plays.
+  if(wrapper.classList.contains('controls-hidden')){
+    showControls();
   }else{
-    clickTimer=setTimeout(()=>{clickTimer=null;togglePlay();},230);
+    wrapper.classList.add('controls-hidden');
+    clearTimeout(controlsTimeout);
   }
 });
 
-let lastTap=0;
 wrapper.addEventListener('touchend',e=>{
-  if(e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.cine-topbar'))return;
-  const now=Date.now();
-  const rect=wrapper.getBoundingClientRect();
-  const x=e.changedTouches[0].clientX-rect.left;
-  if(now-lastTap<300){
-    if(x<rect.width/3)skipVideo(-10);
-    else if(x>rect.width*2/3)skipVideo(10);
-    else toggleFullscreen();
-    lastTap=0;
+  if(e.target.closest('.center-play-circle')||e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.shortcuts-overlay')||e.target.closest('.cine-topbar')||e.target.closest('.next-ep-overlay')||e.target.closest('.poster-overlay'))return;
+  e.preventDefault();
+  // Mobile touch on video surface only toggles controls.
+  if(wrapper.classList.contains('controls-hidden')){
+    showControls();
   }else{
-    lastTap=now;
+    wrapper.classList.add('controls-hidden');
+    clearTimeout(controlsTimeout);
   }
-},{passive:true});
+},{passive:false});
 
 document.addEventListener('keydown',e=>{
   if(!document.getElementById('playerOverlay').classList.contains('active'))return;
@@ -3126,7 +3279,7 @@ document.addEventListener('keydown',e=>{
   switch(e.key.toLowerCase()){
     case'escape':e.preventDefault();closePlayer();break;
     case' ':
-    case'k':e.preventDefault();togglePlay();break;
+    case'k':e.preventDefault();togglePlay();return;
     case'f':e.preventDefault();toggleFullscreen();break;
     case'm':e.preventDefault();toggleMute();break;
     case'arrowleft':
@@ -3168,18 +3321,57 @@ document.addEventListener('keydown',e=>{
 
 wrapper.addEventListener('contextmenu',e=>e.preventDefault());
 
+// Double click seek like streaming apps: left = back 10s, right = forward 10s
+wrapper.addEventListener('dblclick',e=>{
+  const rect=wrapper.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  if(x < rect.width/2){
+    skipVideo(-10);
+    showPlayerToast('↶ 10 seconds');
+    const ripple=document.querySelector('#playerOverlay .seek-ripple.left');
+    if(ripple){ ripple.classList.remove('flash'); void ripple.offsetWidth; ripple.classList.add('flash'); }
+  }else{
+    skipVideo(10);
+    showPlayerToast('10 seconds ↷');
+    const ripple=document.querySelector('#playerOverlay .seek-ripple.right');
+    if(ripple){ ripple.classList.remove('flash'); void ripple.offsetWidth; ripple.classList.add('flash'); }
+  }
+});
+
 function setNextEpisode(epData){
   _nextEpData=epData;
   _nextEpPrompted=false;
+  hideNextEpOverlay();
 }
 
 function playNextEpisode(){
-  if(_nextEpData)playEpisode(_nextEpData);
+  if(_nextEpData){
+    hideNextEpOverlay();
+    playEpisode(_nextEpData);
+  }
 }
 
 function setSkipRegion(start,end,label){
   _skipStart=start;
   _skipEnd=end;
+}
+
+function showNextEpOverlay(){
+  const overlay=document.getElementById('nextEpOverlay');
+  if(!overlay||!_nextEpData)return;
+  const titleEl=document.getElementById('nextEpTitle');
+  if(titleEl){
+    const epTitle=_nextEpData.title||('Episode '+(_nextEpData.episodeNumber||''));
+    titleEl.textContent=epTitle;
+  }
+  const btn=document.getElementById('nextEpBtn');
+  if(btn) btn.innerHTML='Play <i class="fas fa-arrow-right"></i>';
+  overlay.classList.add('show');
+}
+
+function hideNextEpOverlay(){
+  const overlay=document.getElementById('nextEpOverlay');
+  if(overlay)overlay.classList.remove('show');
 }
 
 function skipContent(){
@@ -3299,7 +3491,6 @@ function resetPlayerUi(movie){
   isLooping=false;
   video.loop=false;
   subtitlesOn=false;
-  btnLoop.classList.remove('active');
   btnSubtitles.classList.remove('active');
   speedLabel.textContent='1x';
   document.getElementById('settingsSpeedVal').textContent='Normal';
@@ -3310,6 +3501,7 @@ function resetPlayerUi(movie){
   _syncPlayIcons(true);
   wrapper.classList.remove('controls-hidden','fullscreen-active');
   poster.classList.remove('hidden');
+  hideNextEpOverlay();
   document.getElementById('posterTitle').textContent=movie._episodeTitle?movie.title+' - '+movie._episodeTitle:movie.title;
   document.getElementById('posterSub').textContent='Ready to watch';
   document.getElementById('playerTitle').textContent=movie._episodeTitle?movie.title:movie.title;
@@ -3337,6 +3529,7 @@ function cleanupPlayerAfterClose(){
   _nextEpPrompted=false;
   _skipStart=-1;
   _skipEnd=-1;
+  hideNextEpOverlay();
 
   const detailEl=document.getElementById('detailOverlay');
   if(state.currentMovie&&detailEl&&!detailEl.classList.contains('active')&&state._detailWasActiveBeforePlayer){
