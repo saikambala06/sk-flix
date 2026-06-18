@@ -764,7 +764,7 @@ img{display:block;max-width:100%}
 /* ── Mobile player adjustments ── */
 @media(max-width:600px){
   .player-top{padding:14px 14px 0}
-  .player-bottom{padding:0 12px max(14px,env(safe-area-inset-bottom));gap:7px}
+  .player-bottom{padding:0 12px 14px;gap:7px}
   .ctrl-btn{padding:7px}
   .ctrl-btn svg{width:20px;height:20px}
   .ctrl-sm svg{width:17px;height:17px}
@@ -772,36 +772,13 @@ img{display:block;max-width:100%}
   .skip-anim-left{left:8%}
   .skip-anim-right{right:8%}
   .player-top-center{display:none}
-  .seek-thumb-img{width:min(120px,38vw);height:auto;aspect-ratio:16/9}
-  .seek-tooltip{font-size:.68rem;padding:4px 8px}
-  .controls-row{display:grid;grid-template-columns:repeat(6,minmax(0,auto));justify-content:space-between;align-items:center;gap:4px;width:100%}
-  .ctrl-spacer{display:none}
-  .vol-container{display:none}
-  .time-display{grid-column:1/-1;justify-self:center;text-align:center;min-width:0}
-  .player-panel,.speed-panel,.subs-panel,.fit-panel,.quality-panel{left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom));min-width:0;width:auto;max-width:none;max-height:min(52vh,320px);overflow-y:auto}
+  .speed-panel{right:110px}
+  .subs-panel{right:76px}
+  .fit-panel{right:42px}
+  .quality-panel{right:8px}
   .next-ep-toast{right:12px;left:12px;bottom:100px}
   .next-ep-toast .next-ep-thumb{display:none}
-  .skip-content-btn{right:12px;bottom:110px;max-width:calc(100vw - 24px)}
-}
-
-@media(max-width:420px){
-  .player-top{gap:8px}
-  .player-close-btn{max-width:48px;overflow:hidden}
-  .controls-row{grid-template-columns:repeat(5,minmax(0,auto));justify-content:center;gap:2px}
-  .ctrl-btn{padding:6px}
-  .speed-label{min-width:22px;font-size:.7rem}
-  .player-panel{border-radius:12px;padding:4px}
-  .player-panel-btn{padding:10px 12px;font-size:.84rem}
-}
-
-@media(orientation:portrait) and (max-width:900px){
-  .player-ui{background:linear-gradient(to bottom,rgba(0,0,0,.92) 0%,rgba(0,0,0,.28) 18%,transparent 42%,transparent 60%,rgba(0,0,0,.7) 82%,rgba(0,0,0,.96) 100%)}
-  .player-bottom{gap:6px}
-  .player-panel{max-width:calc(100vw - 24px)}
-}
-
-@media(min-width:601px){
-  .player-panel{max-width:min(260px,calc(100vw - 32px))}
+  .skip-content-btn{right:12px;bottom:110px}
 }
 
 /* ═══ Install Popup ═══════════════════════════════════════════════════════ */
@@ -1153,6 +1130,70 @@ body.blur-bg #home-screen {
   filter: blur(12px) brightness(0.6);
   transform: scale(1.02);
   transition: all 400ms ease;
+}
+
+
+/* Responsive player viewport fix */
+html,body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+}
+
+.player-overlay{
+  width:100vw;
+  height:100dvh;
+  max-width:100vw;
+  max-height:100dvh;
+  overflow:hidden;
+}
+
+.video-wrap{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+}
+
+.video-wrap video{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+}
+
+.player-ui{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+}
+
+.player-top,
+.player-bottom{
+  max-width:100%;
+}
+
+@media (max-width:600px){
+  .player-top{
+    padding-left:12px;
+    padding-right:12px;
+  }
+  .player-bottom{
+    padding-left:10px;
+    padding-right:10px;
+  }
+  .controls-row{
+    width:100%;
+    overflow:hidden;
+  }
+  .quality-panel,
+  .fit-panel,
+  .subs-panel,
+  .speed-panel{
+    max-width:calc(100vw - 20px);
+  }
 }
 
 </style>
