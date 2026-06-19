@@ -1669,10 +1669,21 @@ async function idbGetAll(store){if(!db)return[];return new Promise(r=>{const tx=
 
 function getToken(){return state.token||localStorage.getItem('skflip_token');}
 async function api(path,opts={}){
-  const t=getToken();const headers={'Content-Type':'application/json',...(opts.headers||{})};
+  const t=getToken();
+  const headers={'Content-Type':'application/json',...(opts.headers||{})};
   if(t)headers['Authorization']='Bearer '+t;
+
   const res=await fetch(API+path,{...opts,headers});
-  const data=await res.json();
+  const data=await res.json().catch(()=>({}));
+
+  if(res.status===401){
+    clearAuth();
+    localStorage.removeItem('skflip_token');
+    localStorage.removeItem('skflip_user');
+    showToast('Session expired. Please login again.','info');
+    throw new Error('Session expired');
+  }
+
   if(!res.ok)throw new Error(data.error||'Request failed');
   return data;
 }
@@ -1692,7 +1703,7 @@ function isInWishlist(movieId){
 // skflip_pending_wl) is added after sign-in. This prevents leaking one user's
 // guest items into another user's account when they share a device.
 async function syncWishlistFromDB(){
-  if(!state.user)return;
+  if(!state.user || !getToken())return;
   try{
     const data=await api('/wishlist');
     const dbIds=data.movieIds||[];
@@ -1792,7 +1803,7 @@ function loadStoredAuth(){
   if(t&&u){try{state.token=t;state.user=JSON.parse(u);}catch(e){clearAuth();}}
   state.offerClaimed=localStorage.getItem('skflip_offer_claimed')==='true';
   // Sync wishlist from DB on page load if already logged in
-  if(state.user){syncWishlistFromDB();}
+  if(state.user){syncWishlistFromDB().catch(()=>clearAuth());}
 }
 
 async function claimOffer(){
