@@ -2943,14 +2943,18 @@ function seekTo(e){
 }
 
 function showControls(){
-  clearTimeout(controlsTimeout);
   wrapper.classList.remove('controls-hidden');
+  scheduleControlsAutoHide();
 }
 
 function scheduleControlsAutoHide(){
-  // Controls remain visible after a user click/tap. They only hide automatically
-  // when playback starts again.
+  // While the video is playing (and nothing else needs them on-screen),
+  // controls auto-hide 5 seconds after they were last shown/interacted with.
   clearTimeout(controlsTimeout);
+  if(video.paused||video.ended||settingsOpen)return;
+  controlsTimeout=setTimeout(()=>{
+    wrapper.classList.add('controls-hidden');
+  },5000);
 }
 
 function closeSettingsPanel(){
@@ -3095,11 +3099,10 @@ function resetPlayerPanels(){
 video.addEventListener('play',()=>{
   poster.classList.add('hidden');
   _syncPlayIcons(false);
-  // Resuming/starting playback hides the controls; the user can click/tap
-  // anywhere on the video to bring them back for 10s.
-  clearTimeout(controlsTimeout);
-  wrapper.classList.add('controls-hidden');
   hideNextEpOverlay();
+  // Controls stay visible for a moment after playback starts, then
+  // auto-hide after 5s — same rule as any other on-screen interaction.
+  showControls();
 });
 
 video.addEventListener('pause',()=>{
