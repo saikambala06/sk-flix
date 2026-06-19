@@ -4516,9 +4516,25 @@ function closeMobileNavMenu(){
 }
 function navTo(page){
   document.querySelectorAll('.nav-links a').forEach(a=>a.classList.toggle('active',a.dataset.page===page));
-  const map={movies:'moviesSection',series:'seriesSection',originals:'originalsSection',genres:'genresSection'};
-  if(page==='home')window.scrollTo({top:0,behavior:'smooth'});
-  else if(map[page])document.getElementById(map[page])?.scrollIntoView({behavior:'smooth',block:'start'});
+
+  const map={
+    home:'heroSection',
+    movies:'moviesSection',
+    series:'seriesSection',
+    originals:'originalsSection',
+    genres:'genresSection'
+  };
+
+  const target=document.getElementById(map[page]);
+
+  if(target){
+    target.scrollIntoView({behavior:'smooth',block:'start'});
+  }else if(page==='home'){
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  // Close mobile sidebar immediately after selecting an item
+  // so the user is redirected to the selected section.
   closeMobileNavMenu();
 }
 function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
@@ -4531,7 +4547,12 @@ document.getElementById('hamburger').addEventListener('click',function(){
   if(isOpen)document.body.classList.add('modal-open');
   else closeMobileNavMenu();
 });
-document.querySelectorAll('#navLinks a').forEach(a=>{a.addEventListener('click',closeMobileNavMenu);});
+document.querySelectorAll('#navLinks a').forEach(a=>{
+  a.addEventListener('click',function(){
+    const page=this.dataset.page;
+    if(page) navTo(page);
+  });
+});
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape') return;
   // Close only the topmost open overlay, one at a time
