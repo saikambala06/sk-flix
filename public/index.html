@@ -4603,6 +4603,34 @@ init();
   <img id="transition-img"/>
 </div>
 
+
+<script>
+/* User dashboard sidebar navigation fix */
+document.addEventListener('click', function(e){
+  const item = e.target.closest('.user-sidebar a, .user-sidebar button, .user-nav-item, [data-user-section]');
+  if(!item) return;
+
+  const target = item.getAttribute('data-user-section') || item.getAttribute('href');
+  if(!target) return;
+
+  e.preventDefault();
+
+  // close sidebar after selecting item
+  document.querySelector('.user-sidebar')?.classList.remove('open','mobile-open');
+  document.querySelector('.sidebar-overlay')?.classList.remove('active');
+
+  const id = target.replace('#','');
+  const section = document.getElementById(id);
+
+  if(section){
+    section.scrollIntoView({behavior:'smooth', block:'start'});
+  }else{
+    // fallback for pages/routes
+    window.location.href = target;
+  }
+});
+</script>
+
 </body>
 </html>
 
