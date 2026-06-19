@@ -543,22 +543,25 @@ img{display:block;max-width:100%}
 #playerOverlay .poster-overlay:not(.hidden) ~ .center-play-overlay{z-index:30;
   opacity:0!important;pointer-events:none!important
 }
+/* Opening Settings shows the bottom control bar via the same controls-hidden
+   toggle, but the big center play/pause circle shouldn't pop up just because
+   the settings menu opened — only the settings panel + control bar should. */
+#playerOverlay .player-wrapper.settings-active .center-play-overlay{z-index:30;
+  opacity:0!important;pointer-events:none!important
+}
 #playerOverlay .center-play-circle{
   width:82px;height:82px;border-radius:50%;
-  background:rgba(0,0,0,.62);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:2px solid rgba(255,255,255,.22);
+  background:transparent;border:none;
   display:flex;align-items:center;justify-content:center;
-  font-size:1.75rem;color:#fff;cursor:pointer;
-  box-shadow:0 8px 36px rgba(0,0,0,.55),0 0 0 0 rgba(255,255,255,.05);
-  transition:transform .18s,background .18s,border-color .18s,box-shadow .18s;
+  font-size:2.7rem;color:#fff;cursor:pointer;
+  text-shadow:0 4px 20px rgba(0,0,0,.75),0 0 30px rgba(0,0,0,.4);
+  transition:transform .18s,opacity .18s;
 }
 #playerOverlay .center-play-circle:hover{
-  background:rgba(20,20,28,.8);border-color:rgba(255,255,255,.45);
-  transform:scale(1.07);
-  box-shadow:0 10px 44px rgba(0,0,0,.65),0 0 0 8px rgba(255,255,255,.06)
+  transform:scale(1.1);
+  opacity:.85;
 }
-#playerOverlay .center-play-circle:active{transform:scale(.93)}
+#playerOverlay .center-play-circle:active{transform:scale(.9)}
 #playerOverlay .center-play-circle .cp-icon{pointer-events:none;line-height:1}
 #playerOverlay .skip-indicator{
   position:absolute;top:50%;transform:translateY(-50%);
@@ -2483,11 +2486,12 @@ function playEpisode(ep){
   // Find the next episode in the series and set it for auto-play
   if(state.currentMovie&&Array.isArray(state.currentMovie.episodes)){
     const sorted=state.currentMovie.episodes.slice().sort((a,b)=>{
-      const sa=(a.season||1)*1000+(a.episodeNumber||0);
-      const sb=(b.season||1)*1000+(b.episodeNumber||0);
+      const sa=(a.season||a.seasonNumber||1)*1000+(a.episodeNumber||0);
+      const sb=(b.season||b.seasonNumber||1)*1000+(b.episodeNumber||0);
       return sa-sb;
     });
-    const idx=sorted.findIndex(e=>e.episodeNumber===ep.episodeNumber&&(e.season||1)===(ep.season||1));
+    const epSeason=ep.season||ep.seasonNumber||1;
+    const idx=sorted.findIndex(e=>e.episodeNumber===ep.episodeNumber&&(e.season||e.seasonNumber||1)===epSeason);
     if(idx>=0&&idx<sorted.length-1){
       const next=sorted[idx+1];
       if(next.videoUrl||next.hlsUrl){
@@ -2949,17 +2953,18 @@ function showControls(){
 
 function scheduleControlsAutoHide(){
   // While the video is playing (and nothing else needs them on-screen),
-  // controls auto-hide 5 seconds after they were last shown/interacted with.
+  // controls auto-hide 2 seconds after they were last shown/interacted with.
   clearTimeout(controlsTimeout);
   if(video.paused||video.ended||settingsOpen)return;
   controlsTimeout=setTimeout(()=>{
     wrapper.classList.add('controls-hidden');
-  },5000);
+  },2000);
 }
 
 function closeSettingsPanel(){
   settingsOpen=false;
   settingsPanel.classList.remove('show');
+  wrapper.classList.remove('settings-active');
   showSettingsMain();
   scheduleControlsAutoHide();
 }
@@ -3292,6 +3297,7 @@ btnSettings.addEventListener('click',e=>{
   e.stopPropagation();
   settingsOpen=!settingsOpen;
   settingsPanel.classList.toggle('show',settingsOpen);
+  wrapper.classList.toggle('settings-active',settingsOpen);
   if(settingsOpen){
     populateQualityLevels();
     populateSubsList();
