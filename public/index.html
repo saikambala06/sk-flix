@@ -469,9 +469,13 @@ img{display:block;max-width:100%}
 #playerOverlay .player-wrapper.controls-hidden .cine-topbar{
   opacity:0;transform:translateY(-10px)
 }
+#playerOverlay.active .cine-back-btn,
+#playerOverlay.active .cine-top-icon{
+  pointer-events:all;
+}
 #playerOverlay .cine-back-btn,
 #playerOverlay .cine-top-icon{
-  pointer-events:all;background:rgba(0,0,0,.34);border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.34);border:1px solid rgba(255,255,255,.12);
   color:#fff;border-radius:9px;min-height:40px;display:flex;align-items:center;
   justify-content:center;gap:10px;cursor:pointer;font-family:var(--cine-font);
   transition:background .2s,border-color .2s,transform .15s
@@ -529,9 +533,6 @@ img{display:block;max-width:100%}
 }
 #playerOverlay .player-wrapper:not(.controls-hidden) .center-play-overlay{z-index:30;
   opacity:1;pointer-events:all
-}
-#playerOverlay .center-play-overlay .center-play-circle{
-  pointer-events:auto;
 }
 #playerOverlay .player-wrapper.controls-hidden .center-play-overlay{z-index:30;
   opacity:0;pointer-events:none
@@ -3678,7 +3679,7 @@ async function loadAdminDashboard(){
         <div class="stat-card"><div class="stat-label">Users</div><div class="stat-value">${s.totalUsers||0}</div></div>
       </div>
       <p style="color:var(--muted);font-size:.88rem">Use the sidebar to manage content or upload new movies and series.</p>`;
-  }catch(e){main.innerHTML=`<div class="admin-header"><h1>Dashboard</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div><div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminDashboard()">Try Again</button></div>`;}
+  }catch(e){main.innerHTML=`<div class="admin-header"><div class="admin-header-left"><button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button><h1>Dashboard</h1></div><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div><div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminDashboard()">Try Again</button></div>`;}
 }
 
 async function loadAdminMovies(main,searchQuery=''){
@@ -3693,7 +3694,7 @@ async function loadAdminMovies(main,searchQuery=''){
       <div style="color:var(--muted);font-size:.82rem;margin-bottom:14px">${filtered.length} item${filtered.length!==1?'s':''}${searchQuery?' found for "'+searchQuery+'"':''}</div>
       <div class="admin-table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Year</th><th>Genres</th><th>Rating</th><th>Video</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>${filtered.map(m=>`<tr><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500">${m.title}</td><td><span style="text-transform:uppercase;font-size:.75rem;padding:2px 8px;border-radius:4px;background:rgba(224,168,48,.15);color:var(--gold)">${m.type}</span></td><td>${m.releaseYear||'-'}</td><td style="color:var(--muted);font-size:.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis">${(m._genres_normalized||[]).join(', ')||'-'}</td><td>${m.rating||'-'}</td><td style="color:${m.videoUrl||m.hlsUrl?'var(--green)':'var(--red)'};font-size:.82rem">${m.videoUrl||m.hlsUrl?'✓ Available':'✗ Missing'}</td><td style="text-align:right;white-space:nowrap"><button class="btn-table-action edit" onclick="editMovie('${m._id}')">✏️ Edit</button> <button class="btn-table-action delete" onclick="confirmDeleteMovie('${m._id}','${m.title.replace(/'/g,"\\'")}')">🗑️ Delete</button></td></tr>`).join('')}</tbody></table></div>`;
-  }catch(e){main.innerHTML=`<div class="admin-header"><h1>Manage Content</h1><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div><div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminMovies(document.getElementById('adminMain'))">Try Again</button></div>`;}
+  }catch(e){main.innerHTML=`<div class="admin-header"><div class="admin-header-left"><button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button><h1>Manage Content</h1></div><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div><div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminMovies(document.getElementById('adminMain'))">Try Again</button></div>`;}
 }
 
 let adminSearchTimer=null;
