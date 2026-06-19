@@ -583,59 +583,71 @@ img{display:block;max-width:100%}
 #playerOverlay .seek-ripple.flash{animation:seekFlash .42s cubic-bezier(0.4,0,0.2,1) forwards;}
 /* ── Next Episode Overlay ── */
 #playerOverlay .next-ep-overlay{
-  position:absolute;bottom:90px;right:20px;z-index:8;
-  display:flex;flex-direction:column;align-items:flex-end;gap:10px;
-  opacity:0;transform:translateY(14px);
-  transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1);
+  position:absolute;bottom:116px;right:20px;
+  transform:translateY(14px);
+  z-index:8;width:min(520px,calc(100% - 32px));
+  opacity:0;
+  transition:opacity .4s cubic-bezier(.4,0,.2,1),transform .4s cubic-bezier(.4,0,.2,1);
   pointer-events:none
 }
-#playerOverlay .next-ep-overlay.show{opacity:1;transform:translateY(0);pointer-events:all}
-#playerOverlay .next-ep-info{
-  text-align:right;background:rgba(0,0,0,.55);
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.12);border-radius:10px;
-  padding:10px 14px;max-width:260px
+#playerOverlay .next-ep-overlay.show{
+  opacity:1;transform:translateY(0);pointer-events:all
 }
+#playerOverlay .next-ep-card{
+  background:rgba(14,14,22,.9);
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border:1px solid rgba(255,255,255,.1);border-radius:16px;
+  padding:18px 20px;display:flex;align-items:center;gap:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.75)
+}
+#playerOverlay .next-ep-thumb{
+  flex-shrink:0;width:148px;height:86px;border-radius:10px;
+  overflow:hidden;background:rgba(255,255,255,.06)
+}
+#playerOverlay .next-ep-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+#playerOverlay .next-ep-thumb-placeholder{
+  width:100%;height:100%;display:flex;align-items:center;
+  justify-content:center;color:rgba(255,255,255,.22);font-size:1.8rem
+}
+#playerOverlay .next-ep-text{flex:1;min-width:0}
 #playerOverlay .next-ep-label{
-  font-size:.68rem;font-weight:700;letter-spacing:1.2px;
-  text-transform:uppercase;color:var(--cine-gold);margin-bottom:3px
+  font-size:.63rem;font-weight:800;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(255,255,255,.42);margin-bottom:5px
 }
 #playerOverlay .next-ep-title{
-  font-size:.88rem;font-weight:600;color:#fff;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px
+  font-size:1rem;font-weight:700;color:#fff;line-height:1.35;
+  overflow:hidden;text-overflow:ellipsis;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  margin-bottom:5px
 }
-#playerOverlay .next-ep-btn{
-  display:flex;align-items:center;gap:9px;
-  background:var(--cine-gold);color:#000;
-  border:none;border-radius:50px;padding:12px 22px;
-  font-family:var(--cine-font);font-size:.92rem;font-weight:800;
-  cursor:pointer;box-shadow:0 6px 28px rgba(240,178,50,.45);
-  transition:transform .18s,box-shadow .18s,background .18s;
-  white-space:nowrap
+#playerOverlay .next-ep-countdown{font-size:.82rem;color:rgba(255,255,255,.42)}
+#playerOverlay .next-ep-play-btn{
+  flex-shrink:0;display:flex;align-items:center;gap:9px;
+  background:var(--cine-accent);color:#fff;
+  border:none;border-radius:50px;padding:14px 26px;
+  font-family:var(--cine-font);font-size:.95rem;font-weight:800;
+  cursor:pointer;box-shadow:0 6px 28px rgba(232,69,69,.45);
+  transition:transform .18s,box-shadow .18s,background .18s;white-space:nowrap
 }
-#playerOverlay .next-ep-btn:hover{
-  background:#f5c842;transform:translateY(-2px);
-  box-shadow:0 10px 36px rgba(240,178,50,.6)
+#playerOverlay .next-ep-play-btn:hover{
+  background:#f03d3d;transform:translateY(-2px);
+  box-shadow:0 10px 36px rgba(232,69,69,.65)
 }
-#playerOverlay .next-ep-btn:active{transform:scale(.96)}
-#playerOverlay .next-ep-btn i{font-size:.85rem}
+#playerOverlay .next-ep-play-btn:active{transform:scale(.96)}
 @keyframes nextEpPulse{
-  0%,100%{box-shadow:0 6px 28px rgba(240,178,50,.45)}
-  50%{box-shadow:0 6px 36px rgba(240,178,50,.75)}
+  0%,100%{box-shadow:0 6px 28px rgba(232,69,69,.45)}
+  50%{box-shadow:0 8px 38px rgba(232,69,69,.8)}
 }
-#playerOverlay .next-ep-overlay.show .next-ep-btn{animation:nextEpPulse 2s ease-in-out infinite}
+#playerOverlay .next-ep-overlay.show .next-ep-play-btn{animation:nextEpPulse 2s ease-in-out infinite}
 @media(max-width:600px){
-  #playerOverlay .next-ep-overlay{bottom:80px;right:12px}
-  #playerOverlay .next-ep-btn{padding:10px 16px;font-size:.82rem}
-@media(max-width:600px){
-#playerOverlay .next-ep-overlay{left:50%;right:auto;bottom:70px;transform:translate(-50%,20px);max-width:92vw;text-align:center;}
-#playerOverlay .next-ep-overlay.show{transform:translate(-50%,0);}
-#playerOverlay .next-ep-title{font-size:.9rem;}
+  #playerOverlay .next-ep-overlay{bottom:112px;right:12px;width:calc(100% - 24px)}
+  #playerOverlay .next-ep-thumb{width:96px;height:56px;border-radius:8px}
+  #playerOverlay .next-ep-play-btn{padding:11px 16px;font-size:.82rem}
+  #playerOverlay .next-ep-title{font-size:.88rem}
+  #playerOverlay .next-ep-card{padding:12px 14px;gap:10px}
 }
-@media(min-width:601px){
-#playerOverlay .next-ep-overlay{bottom:90px;right:24px;}
-}
-
+@media(max-width:400px){
+  #playerOverlay .next-ep-thumb{display:none}
 }
 @keyframes seekFlash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
 #playerOverlay .controls-container{
@@ -809,6 +821,7 @@ img{display:block;max-width:100%}
 @media(max-width:520px){
   #playerOverlay .volume-group{display:none}
   #playerOverlay .btn-optional{display:none}
+  #playerOverlay #btnPip{display:flex!important}
   #playerOverlay .time-display{position:absolute;left:50%;bottom:46px;transform:translateX(-50%);padding:0}
   #playerOverlay .controls-row{padding-top:16px}
 }
@@ -1396,7 +1409,7 @@ body.blur-bg #home-screen {
 
 <div class="player-overlay" id="playerOverlay">
   <div class="player-wrapper" id="playerWrapper">
-    <video id="videoPlayer" preload="metadata" playsinline></video>
+    <video id="videoPlayer" preload="metadata" playsinline webkit-playsinline="true"></video>
 
     <div class="cine-topbar" id="playerTopbar">
       <button class="cine-back-btn" onclick="closePlayer()" aria-label="Close player">
@@ -1407,9 +1420,7 @@ body.blur-bg #home-screen {
         <div class="cine-title-main" id="playerTopTitle"></div>
         <div class="cine-title-sub" id="playerTopEp"></div>
       </div>
-      <button class="cine-top-icon" onclick="showShortcuts()" aria-label="Keyboard shortcuts" title="Shortcuts">
-        <i class="fas fa-keyboard"></i>
-      </button>
+
     </div>
 
     <div class="poster-overlay" id="posterOverlay" onclick="event.stopPropagation();togglePlay()">
@@ -1553,9 +1564,12 @@ body.blur-bg #home-screen {
       </div>
     </div>
 
-    <div class="shortcuts-overlay" id="shortcutsOverlay">
-      <div>
-        <h3 style="text-align:center;margin-bottom:20px;font-size:1.2rem">Keyboard Shortcuts</h3>
+    <div class="shortcuts-overlay" id="shortcutsOverlay" onclick="if(event.target===this||event.target.closest('.shortcuts-close-btn'))shortcutsOverlay.classList.remove('show')">
+      <div onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h3 style="font-size:1.2rem;margin:0">Keyboard Shortcuts</h3>
+          <button class="shortcuts-close-btn" onclick="document.getElementById('shortcutsOverlay').classList.remove('show')" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">✕</button>
+        </div>
         <div class="shortcuts-grid">
           <div class="shortcut-item"><span class="shortcut-key">Space</span> Play / Pause</div>
           <div class="shortcut-item"><span class="shortcut-key">F</span> Fullscreen</div>
@@ -1573,14 +1587,20 @@ body.blur-bg #home-screen {
 
     <!-- ── Next Episode Overlay ── -->
     <div class="next-ep-overlay" id="nextEpOverlay">
-      <div class="next-ep-info" id="nextEpInfo">
-        <div class="next-ep-label">Up Next</div>
-        <div class="next-ep-title" id="nextEpTitle">Next Episode</div>
+      <div class="next-ep-card">
+        <div class="next-ep-thumb" id="nextEpThumb">
+          <img id="nextEpThumbImg" src="" alt="" style="display:none"/>
+          <div class="next-ep-thumb-placeholder" id="nextEpThumbPh">▶</div>
+        </div>
+        <div class="next-ep-text">
+          <div class="next-ep-label">NEXT EPISODE</div>
+          <div class="next-ep-title" id="nextEpTitle">Next Episode</div>
+          <div class="next-ep-countdown" id="nextEpCountdown">Starting in 20s</div>
+        </div>
+        <button class="next-ep-play-btn" onclick="playNextEpisode()">
+          Play <i class="fas fa-arrow-right"></i>
+        </button>
       </div>
-      <button class="next-ep-btn" id="nextEpBtn" onclick="playNextEpisode()">
-        <i class="fas fa-forward"></i>
-        Next Episode
-      </button>
     </div>
 
   </div>
@@ -3094,13 +3114,29 @@ video.addEventListener('timeupdate',()=>{
     state._lastSaveTime=video.currentTime;
     saveWatchProgress(state.currentMovie,video.currentTime,video.duration||0);
   }
-  if(_nextEpData&&!_nextEpPrompted&&video.duration&&isFinite(video.duration)&&(video.duration-video.currentTime)<=20&&video.currentTime>0){
-    _nextEpPrompted=true;
-    showNextEpOverlay();
-  }
+  _checkNextEpTrigger();
   const skipBtnVisible=_skipStart>=0&&_skipEnd>_skipStart&&video.currentTime>=_skipStart&&video.currentTime<_skipEnd;
   if(skipBtnVisible)showPlayerToast('Press I to skip intro');
 });
+
+// Re-arms the "next episode" prompt whenever playback re-enters the last
+// 20 seconds of the current episode, and disarms+hides it the moment the
+// user rewinds / drags the seek bar back out of that window — so clicking
+// back (rewind 10s) or sliding the progress line always restarts the
+// countdown cleanly instead of leaving it permanently dismissed.
+function _checkNextEpTrigger(){
+  if(!_nextEpData||!video.duration||!isFinite(video.duration))return;
+  const remaining=video.duration-video.currentTime;
+  if(remaining<=20&&video.currentTime>0){
+    if(!_nextEpPrompted){
+      _nextEpPrompted=true;
+      showNextEpOverlay();
+    }
+  }else if(_nextEpPrompted){
+    _nextEpPrompted=false;
+    hideNextEpOverlay();
+  }
+}
 
 video.addEventListener('progress',updateBuffered);
 video.addEventListener('loadedmetadata',()=>{
@@ -3120,10 +3156,18 @@ video.addEventListener('ended',()=>{
     btnPlay.querySelector('i').className='fas fa-redo';
     wrapper.classList.remove('controls-hidden');
     if(_nextEpData){
+      _nextEpPrompted=true;
       showNextEpOverlay();
     }
   }
 });
+
+// Clicking rewind/forward (skipVideo) or sliding the progress bar both move
+// video.currentTime, which fires these. Re-checking here means stepping back
+// out of the last-20s window hides/cancels the next-episode popup right away,
+// and stepping back into it (or scrubbing forward into it) brings it back.
+video.addEventListener('seeking',_checkNextEpTrigger);
+video.addEventListener('seeked',_checkNextEpTrigger);
 
 btnPlay.addEventListener('click',e=>{e.stopPropagation();togglePlay();});
 btnRewind.addEventListener('click',e=>{e.stopPropagation();skipVideo(-10);});
@@ -3156,20 +3200,71 @@ btnScreenshot.addEventListener('click',e=>{
   }
 });
 
+function _isVideoInPip(){
+  return document.pictureInPictureElement===video||video.webkitPresentationMode==='picture-in-picture';
+}
+
 btnPip.addEventListener('click',async e=>{
   e.stopPropagation();
   try{
     if(document.pictureInPictureElement){
       await document.exitPictureInPicture();
-      showPlayerToast('Exited PiP');
-    }else{
+    }else if(video.webkitPresentationMode&&typeof video.webkitSetPresentationMode==='function'){
+      // Older iOS Safari (incl. portrait mode) exposes PiP via the
+      // webkit presentation-mode API rather than the standard one.
+      video.webkitSetPresentationMode(video.webkitPresentationMode==='picture-in-picture'?'inline':'picture-in-picture');
+    }else if(document.pictureInPictureEnabled&&!video.disablePictureInPicture){
       await video.requestPictureInPicture();
-      showPlayerToast('Picture-in-Picture');
+    }else{
+      throw new Error('pip-unsupported');
     }
   }catch(err){
     showToast('Picture-in-Picture is not supported here.','info');
   }
 });
+
+// Restores the full custom player UI around the still-playing video —
+// used when the user "zooms"/restores out of Picture-in-Picture.
+function _restorePlayerFromPip(){
+  const overlay=document.getElementById('playerOverlay');
+  if(!overlay||overlay.classList.contains('active')||!state.currentMovie)return;
+  const detailElCheck=document.getElementById('detailOverlay');
+  state._detailWasActiveBeforePlayer=!!(detailElCheck&&detailElCheck.classList.contains('active'));
+  overlay.classList.add('active');
+  document.body.style.overflow='hidden';
+  _navPush('player');
+  showControls();
+  _syncPlayIcons(video.paused);
+}
+
+video.addEventListener('enterpictureinpicture',()=>{
+  btnPip.classList.add('active');
+  showPlayerToast('Picture-in-Picture');
+  // Hand the screen back to whatever was open underneath (the movie's
+  // card/detail tab) — playback keeps going inside the floating PiP
+  // window instead of behind the full-screen player.
+  if(document.getElementById('playerOverlay').classList.contains('active'))closePlayer();
+});
+video.addEventListener('leavepictureinpicture',()=>{
+  btnPip.classList.remove('active');
+  showPlayerToast('Exited PiP');
+  // Only auto-restore the full player if playback is still going — if the
+  // user stopped/closed the floating window instead of restoring it, the
+  // video will be paused and we leave them where they are.
+  if(!video.paused)_restorePlayerFromPip();
+});
+if('webkitpresentationmode' in video || 'onwebkitpresentationmodechanged' in video){
+  video.addEventListener('webkitpresentationmodechanged',()=>{
+    const inPip=video.webkitPresentationMode==='picture-in-picture';
+    btnPip.classList.toggle('active',inPip);
+    showPlayerToast(inPip?'Picture-in-Picture':'Exited PiP');
+    if(inPip){
+      if(document.getElementById('playerOverlay').classList.contains('active'))closePlayer();
+    }else if(!video.paused){
+      _restorePlayerFromPip();
+    }
+  });
+}
 
 function toggleFullscreen(){
   if(!document.fullscreenElement){
@@ -3252,6 +3347,7 @@ wrapper.addEventListener('click',e=>{
   if(wrapper.classList.contains('controls-hidden')){
     showControls();
   }else{
+    if(settingsOpen) closeSettingsPanel();
     wrapper.classList.add('controls-hidden');
     clearTimeout(controlsTimeout);
   }
@@ -3264,6 +3360,7 @@ wrapper.addEventListener('touchend',e=>{
   if(wrapper.classList.contains('controls-hidden')){
     showControls();
   }else{
+    if(settingsOpen) closeSettingsPanel();
     wrapper.classList.add('controls-hidden');
     clearTimeout(controlsTimeout);
   }
@@ -3357,22 +3454,46 @@ function setSkipRegion(start,end,label){
   _skipEnd=end;
 }
 
+let _nextEpCountdownTimer=null;
+
 function showNextEpOverlay(){
   const overlay=document.getElementById('nextEpOverlay');
   if(!overlay||!_nextEpData)return;
+
+  // Title
   const titleEl=document.getElementById('nextEpTitle');
-  if(titleEl){
-    const epTitle=_nextEpData.title||('Episode '+(_nextEpData.episodeNumber||''));
-    titleEl.textContent=epTitle;
+  if(titleEl) titleEl.textContent=_nextEpData.title||('Episode '+(_nextEpData.episodeNumber||''));
+
+  // Thumbnail
+  const thumbImg=document.getElementById('nextEpThumbImg');
+  const thumbPh=document.getElementById('nextEpThumbPh');
+  const hasThumbnail=_nextEpData.thumbnailUrl&&_nextEpData.thumbnailUrl.startsWith('http');
+  if(thumbImg&&thumbPh){
+    if(hasThumbnail){thumbImg.src=_nextEpData.thumbnailUrl;thumbImg.style.display='block';thumbPh.style.display='none';}
+    else{thumbImg.style.display='none';thumbPh.style.display='flex';}
   }
-  const btn=document.getElementById('nextEpBtn');
-  if(btn) btn.innerHTML='Play <i class="fas fa-arrow-right"></i>';
+
+  // Countdown
+  clearTimeout(_nextEpCountdownTimer);
+  const remaining=video.duration&&isFinite(video.duration)?Math.ceil(video.duration-video.currentTime):20;
+  let secs=Math.min(20,Math.max(1,remaining));
+  const countEl=document.getElementById('nextEpCountdown');
+  function tick(){
+    if(countEl) countEl.textContent='Starting in '+secs+'s';
+    if(secs<=0){playNextEpisode();return;}
+    secs--;
+    _nextEpCountdownTimer=setTimeout(tick,1000);
+  }
+  tick();
+
   overlay.classList.add('show');
 }
 
 function hideNextEpOverlay(){
   const overlay=document.getElementById('nextEpOverlay');
   if(overlay)overlay.classList.remove('show');
+  clearTimeout(_nextEpCountdownTimer);
+  _nextEpCountdownTimer=null;
 }
 
 function skipContent(){
@@ -3502,6 +3623,8 @@ function resetPlayerUi(movie){
   _syncPlayIcons(true);
   wrapper.classList.remove('controls-hidden','fullscreen-active');
   poster.classList.remove('hidden');
+  _nextEpData=null;
+  _nextEpPrompted=false;
   hideNextEpOverlay();
   document.getElementById('posterTitle').textContent=movie._episodeTitle?movie.title+' - '+movie._episodeTitle:movie.title;
   document.getElementById('posterSub').textContent='Ready to watch';
@@ -3511,9 +3634,30 @@ function resetPlayerUi(movie){
   closeSettingsPanel();
 }
 
+function _maybeReopenDetailAfterPlayerClose(){
+  const detailEl=document.getElementById('detailOverlay');
+  if(state.currentMovie&&detailEl&&!detailEl.classList.contains('active')&&state._detailWasActiveBeforePlayer){
+    state._detailWasActiveBeforePlayer=false;
+    setTimeout(()=>{openDetail(state.currentMovie,true);},80);
+  }else{
+    state._detailWasActiveBeforePlayer=false;
+  }
+}
+
 function cleanupPlayerAfterClose(){
   if(state.currentMovie&&video.currentTime>5){
     saveWatchProgress(state.currentMovie,video.currentTime,video.duration||0);
+  }
+  if(_isVideoInPip()){
+    // Don't tear the video down — it's still playing inside the floating
+    // PiP window. Just close the full-screen player chrome and surface
+    // the movie's card/detail tab underneath it.
+    if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+    if(screen.orientation&&screen.orientation.unlock)try{screen.orientation.unlock();}catch(e){}
+    clearTimeout(controlsTimeout);
+    closeSettingsPanel();
+    _maybeReopenDetailAfterPlayerClose();
+    return;
   }
   video.pause();
   if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
@@ -3531,14 +3675,7 @@ function cleanupPlayerAfterClose(){
   _skipStart=-1;
   _skipEnd=-1;
   hideNextEpOverlay();
-
-  const detailEl=document.getElementById('detailOverlay');
-  if(state.currentMovie&&detailEl&&!detailEl.classList.contains('active')&&state._detailWasActiveBeforePlayer){
-    state._detailWasActiveBeforePlayer=false;
-    setTimeout(()=>{openDetail(state.currentMovie,true);},80);
-  }else{
-    state._detailWasActiveBeforePlayer=false;
-  }
+  _maybeReopenDetailAfterPlayerClose();
 }
 
 function attachVideoSource(src,movie){
@@ -3601,9 +3738,11 @@ function openPlayer(movie){
 
   resetPlayerUi(movie);
   _showVideoSkeleton('Loading "'+movie.title+'"...');
-  document.getElementById('playerOverlay').classList.add('active');
-  document.body.style.overflow='hidden';
-  _navPush('player');
+  if(!_isVideoInPip()){
+    document.getElementById('playerOverlay').classList.add('active');
+    document.body.style.overflow='hidden';
+    _navPush('player');
+  }
   showControls();
   attachVideoSource(src,movie);
 }
@@ -3721,6 +3860,7 @@ async function executeDeleteMovie(id){
     const idx=wishList.indexOf(id);
     if(idx>-1){wishList.splice(idx,1);saveWishlist(wishList);}
     loadAdminMovies(document.getElementById('adminMain'),'');
+    await refreshHomeData();
   }catch(e){showToast(e.message,'error');}
 }
 
@@ -4449,5 +4589,18 @@ body.blur-bg #home-screen {
 }
 
 </style>
+
+<!-- ── Dev Live Reload (localhost only — auto-reloads when index.html / index.js changes) ── -->
+<script>
+(function(){
+  if(location.hostname!=='localhost'&&location.hostname!=='127.0.0.1')return;
+  function connect(){
+    const es=new EventSource('/api/dev-reload');
+    es.onmessage=function(e){if(e.data==='reload'){console.log('[SkFlip] File changed — reloading…');location.reload();}};
+    es.onerror=function(){es.close();setTimeout(connect,3000);};
+  }
+  connect();
+})();
+</script>
 
 <!-- Updated: Sign-out confirmation, login-required offer claim, and cross-device wishlist support enabled. -->
