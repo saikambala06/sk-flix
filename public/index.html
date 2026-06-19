@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no"/>
 <title>SkFlip — Stream Everything</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -19,12 +19,22 @@
   --radius:12px;--radius-lg:20px;--nav-h:70px;
   --transition:0.3s cubic-bezier(0.4,0,0.2,1);
 }
-html{scroll-behavior:smooth;overflow-x:hidden}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden}
+html{scroll-behavior:smooth;overflow-x:hidden;touch-action:pan-x pan-y}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden;touch-action:pan-x pan-y}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--gold);border-radius:99px}
 img{display:block;max-width:100%}
+
+/* Mobile browsers (iOS Safari, Chrome) auto-zoom the whole page when a
+   focused input/select/textarea has font-size under 16px — that's the
+   "page zooms when I tap a field" bug across every tab/form on the site
+   (login, signup, search, admin, episode editor, etc). Forcing 16px on
+   every text field, regardless of its own font-size rule, stops the
+   zoom while keeping pinch-zoom available for accessibility. */
+@media(max-width:768px){
+  input,textarea,select{font-size:16px!important}
+}
 
 .navbar{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(16px,4vw,60px);height:var(--nav-h);background:transparent;}
 .navbar::before{content:'';position:absolute;inset:0;background:transparent;transition:background var(--transition), backdrop-filter var(--transition);z-index:-1;pointer-events:none;}
@@ -1846,7 +1856,7 @@ function toggleUserMenu(){const m=document.getElementById('userMenu');if(m)m.cla
 function closeUserMenu(){const m=document.getElementById('userMenu');if(m)m.classList.remove('show');}
 document.addEventListener('click',e=>{if(!e.target.closest('.user-avatar')&&!e.target.closest('.user-menu'))closeUserMenu();});
 
-function openAuth(tab){switchAuthTab(tab);document.getElementById('authError').classList.remove('show');document.getElementById('authOverlay').classList.add('active');document.body.style.overflow='hidden';_navPush('auth');}
+function openAuth(tab){switchAuthTab(tab);document.getElementById('authError').classList.remove('show');document.getElementById('authOverlay').classList.add('active');document.body.classList.add('modal-open');_navPush('auth');}
 function closeAuth(){ history.back(); }
 function switchAuthTab(tab){
   document.getElementById('tabLogin').classList.toggle('active',tab==='login');document.getElementById('tabSignup').classList.toggle('active',tab==='signup');
@@ -1888,12 +1898,12 @@ function handleLogout(){openSignoutModal();}
 function openSignoutModal(){
   closeUserMenu();
   document.getElementById('signoutOverlay').classList.add('active');
-  document.body.style.overflow='hidden';
+  document.body.classList.add('modal-open');
   _navPush('signout');
 }
 function closeSignoutModal(){
   document.getElementById('signoutOverlay').classList.remove('active');
-  document.body.style.overflow='';
+  document.body.classList.remove('modal-open');
 }
 function confirmSignout(){
   closeSignoutModal();
@@ -2267,7 +2277,7 @@ function clearGenreFilter(){
   populateRow(document.getElementById('trendingRow'),state.movies,'No movies yet. Content will appear here once added.');
 }
 
-function openSearch(){document.getElementById('searchOverlay').classList.add('active');document.body.style.overflow='hidden';setTimeout(()=>document.getElementById('searchInput').focus(),50);_navPush('search');}
+function openSearch(){document.getElementById('searchOverlay').classList.add('active');document.body.classList.add('modal-open');setTimeout(()=>document.getElementById('searchInput').focus(),50);_navPush('search');}
 function closeSearch(){ history.back(); }
 
 document.getElementById('searchInput').addEventListener('input',e=>{clearTimeout(state.searchTimer);state.searchTimer=setTimeout(()=>runSearch(e.target.value),300);});
@@ -2461,7 +2471,7 @@ ${(()=>{
   const overlay=document.getElementById('detailOverlay');
   overlay.classList.add('active');
   overlay.scrollTop=0;
-  document.body.style.overflow='hidden';
+  document.body.classList.add('modal-open');
   
   if(replaceHistory) {
     history.replaceState({skflip: 'detail'}, '', location.href);
@@ -2730,7 +2740,7 @@ function openWishlist(){
       :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center">${movie.title}</div>`}
       <div style="padding:10px;background:var(--surface)"><div style="font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${movie.title}</div><div style="font-size:.68rem;color:var(--muted);margin-top:2px">${movie.releaseYear||''}${genres[0]?' · '+genres[0]:''}</div></div>`;
     card.addEventListener('click',()=>{closeWishlist();openDetail(movie);});grid.appendChild(card);});}
-  overlay.classList.add('active');document.body.style.overflow='hidden';_navPush('wishlist');
+  overlay.classList.add('active');document.body.classList.add('modal-open');_navPush('wishlist');
 }
 function closeWishlist(){ history.back(); }
 
@@ -2815,7 +2825,7 @@ function _rawClose(id){
       const o=document.getElementById(oid);
       return o&&o.classList.contains('active')&&!o.classList.contains('closing');
     });
-  if(!anyOpen)document.body.style.overflow='';
+  if(!anyOpen)document.body.classList.remove('modal-open');
 }
 
 window.addEventListener('popstate',e=>{
@@ -3239,7 +3249,7 @@ function _restorePlayerFromPip(){
   const detailElCheck=document.getElementById('detailOverlay');
   state._detailWasActiveBeforePlayer=!!(detailElCheck&&detailElCheck.classList.contains('active'));
   overlay.classList.add('active');
-  document.body.style.overflow='hidden';
+  document.body.classList.add('modal-open');
   _navPush('player');
   showControls();
   _syncPlayIcons(video.paused);
@@ -3749,7 +3759,7 @@ function openPlayer(movie){
   _showVideoSkeleton('Loading "'+movie.title+'"...');
   if(!_isVideoInPip()){
     document.getElementById('playerOverlay').classList.add('active');
-    document.body.style.overflow='hidden';
+    document.body.classList.add('modal-open');
     _navPush('player');
   }
   showControls();
@@ -3768,7 +3778,7 @@ function toggleMobileAdminSidebar(){
 }
 
 function openAdmin(){
-  closeUserMenu();document.getElementById('adminOverlay').classList.add('active');document.body.style.overflow='hidden';_navPush('admin');
+  closeUserMenu();document.getElementById('adminOverlay').classList.add('active');document.body.classList.add('modal-open');_navPush('admin');
   document.getElementById('adminSidebar').classList.remove('mobile-open');
   document.getElementById('adminSidebarOverlay').classList.remove('active');
   if(state.user&&state.user.role==='admin'){document.getElementById('adminSidebar').style.display='';switchAdminTab(state.adminTab||'dashboard');}
@@ -4433,13 +4443,13 @@ if(window.matchMedia('(display-mode: standalone)').matches||window.navigator.sta
 // ═══ Guest Wishlist Login Modal ═══════════════════════════════════════════
 function openWlLoginModal(){
   document.getElementById('wlLoginOverlay').classList.add('active');
-  document.body.style.overflow='hidden';
+  document.body.classList.add('modal-open');
 }
 function closeWlLoginModal(){
   document.getElementById('wlLoginOverlay').classList.remove('active');
   const anyOpen=['playerOverlay','detailOverlay','authOverlay','adminOverlay','searchOverlay','wishlistOverlay','signoutOverlay']
     .some(oid=>{const o=document.getElementById(oid);return o&&o.classList.contains('active')&&!o.classList.contains('closing');});
-  if(!anyOpen)document.body.style.overflow='';
+  if(!anyOpen)document.body.classList.remove('modal-open');
   state._pendingWishlistId=null;
 }
 function loginFromWlModal(){
