@@ -875,14 +875,14 @@ img{display:block;max-width:100%}
 
 .admin-overlay{position:fixed;inset:0;z-index:2500;background:var(--bg);overflow:hidden;opacity:0;pointer-events:none;transition:opacity .3s}
 .admin-overlay.active{opacity:1;pointer-events:all}
-.admin-layout{display:flex;height:100vh;width:100%}
-.admin-sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;flex-shrink:0;height:100vh;overflow-y:auto;transition:transform 0.3s ease; z-index:2600;}
+.admin-layout{display:flex;height:100%;width:100%}
+.admin-sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;flex-shrink:0;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:transform 0.3s ease; z-index:2600;}
 .admin-logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;padding:0 24px 24px;border-bottom:1px solid var(--border);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
 .admin-logo span{color:var(--gold)}
 .admin-nav-item{display:flex;align-items:center;gap:10px;padding:11px 24px;color:var(--muted);cursor:pointer;transition:all var(--transition);font-size:.9rem;border-left:3px solid transparent;background:none;border-top:none;border-bottom:none;border-right:none;width:100%;text-align:left;font-family:inherit}
 .admin-nav-item:hover{color:var(--text);background:rgba(255,255,255,.04)}
 .admin-nav-item.active{color:var(--gold);background:rgba(224,168,48,.07);border-left-color:var(--gold)}
-.admin-main{flex:1;padding:32px;overflow-y:auto;height:100vh;width:100%}
+.admin-main{flex:1;padding:32px;overflow-y:auto;-webkit-overflow-scrolling:touch;height:100%;width:100%}
 .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
 .admin-header-left{display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:1}
 .admin-header-left h1{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;white-space:nowrap}
@@ -1120,9 +1120,9 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
   .wishlist-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
   .hero-title, .promo-text h2 { line-height: 1.1; }
   .admin-layout{flex-direction:column}
-  .admin-sidebar{position:absolute;top:0;left:0;bottom:0;width:260px;height:100vh;transform:translateX(-100%);z-index:2700;box-shadow:10px 0 30px rgba(0,0,0,.5);}
+  .admin-sidebar{position:absolute;top:0;left:0;bottom:0;width:260px;height:100%;transform:translateX(-100%);z-index:2700;box-shadow:10px 0 30px rgba(0,0,0,.5);}
   .admin-sidebar.mobile-open{transform:translateX(0)}
-  .admin-main{margin-left:0;padding:20px;height:100vh;overflow-y:auto}
+  .admin-main{margin-left:0;padding:20px;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .admin-menu-toggle{display:block;}
   .admin-header{flex-direction:column;align-items:flex-start;gap:15px;}
   .admin-header-left{width:100%;align-items:center;justify-content:space-between;}
@@ -2824,7 +2824,7 @@ function _rawClose(id){
     .some(oid=>{
       const o=document.getElementById(oid);
       return o&&o.classList.contains('active')&&!o.classList.contains('closing');
-    });
+    })||document.getElementById('navLinks')?.classList.contains('open');
   if(!anyOpen)document.body.classList.remove('modal-open');
 }
 
@@ -4448,7 +4448,7 @@ function openWlLoginModal(){
 function closeWlLoginModal(){
   document.getElementById('wlLoginOverlay').classList.remove('active');
   const anyOpen=['playerOverlay','detailOverlay','authOverlay','adminOverlay','searchOverlay','wishlistOverlay','signoutOverlay']
-    .some(oid=>{const o=document.getElementById(oid);return o&&o.classList.contains('active')&&!o.classList.contains('closing');});
+    .some(oid=>{const o=document.getElementById(oid);return o&&o.classList.contains('active')&&!o.classList.contains('closing');})||document.getElementById('navLinks')?.classList.contains('open');
   if(!anyOpen)document.body.classList.remove('modal-open');
   state._pendingWishlistId=null;
 }
@@ -4496,22 +4496,35 @@ function showToast(msg, type='info') {
 }
 
 // ═══ Navigation ═══
+function closeMobileNavMenu(){
+  document.getElementById('hamburger').classList.remove('open');
+  document.getElementById('navLinks').classList.remove('open');
+  const anyOverlayOpen=['playerOverlay','detailOverlay','authOverlay','adminOverlay','searchOverlay','wishlistOverlay','signoutOverlay']
+    .some(oid=>{const o=document.getElementById(oid);return o&&o.classList.contains('active')&&!o.classList.contains('closing');});
+  if(!anyOverlayOpen)document.body.classList.remove('modal-open');
+}
 function navTo(page){
   document.querySelectorAll('.nav-links a').forEach(a=>a.classList.toggle('active',a.dataset.page===page));
   const map={movies:'moviesSection',series:'seriesSection',originals:'originalsSection',genres:'genresSection'};
   if(page==='home')window.scrollTo({top:0,behavior:'smooth'});
   else if(map[page])document.getElementById(map[page])?.scrollIntoView({behavior:'smooth',block:'start'});
-  document.getElementById('hamburger').classList.remove('open');document.getElementById('navLinks').classList.remove('open');
+  closeMobileNavMenu();
 }
 function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
 
 // ═══ Events ═══
 window.addEventListener('scroll',()=>{document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>30);},{passive:true});
-document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('open');document.getElementById('navLinks').classList.toggle('open');});
-document.querySelectorAll('#navLinks a').forEach(a=>{a.addEventListener('click',()=>{document.getElementById('hamburger').classList.remove('open');document.getElementById('navLinks').classList.remove('open');});});
+document.getElementById('hamburger').addEventListener('click',function(){
+  this.classList.toggle('open');
+  const isOpen=document.getElementById('navLinks').classList.toggle('open');
+  if(isOpen)document.body.classList.add('modal-open');
+  else closeMobileNavMenu();
+});
+document.querySelectorAll('#navLinks a').forEach(a=>{a.addEventListener('click',closeMobileNavMenu);});
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape') return;
   // Close only the topmost open overlay, one at a time
+  if(document.getElementById('navLinks').classList.contains('open'))         { closeMobileNavMenu(); return; }
   if(document.getElementById('playerOverlay').classList.contains('active'))  { closePlayer();   return; }
   if(document.getElementById('detailOverlay').classList.contains('active'))  { closeDetail();   return; }
   if(document.getElementById('adminOverlay').classList.contains('active'))   { closeAdmin();    return; }
