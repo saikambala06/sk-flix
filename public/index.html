@@ -1739,6 +1739,26 @@ async function syncWishlistFromDB(){
   }catch(e){console.warn('Wishlist sync failed:',e.message);}
 }
 
+// ─── Sync continue-watching from DB after login ────────────────────────────
+// Each user's in-progress list lives in MongoDB, keyed by their account —
+// not the browser. This is what keeps the list correct when a different
+// person signs in on the same shared device. Guest progress (pre-login,
+// stored under a separate key) is never merged into an account, same as
+// the wishlist above.
+async function syncContinueWatchingFromDB(){
+  if(!state.user || !getToken())return;
+  try{
+    const data=await api('/continue-watching');
+    const items=(data.items||[]).map(it=>({
+      id:it.movieId,title:it.title,posterUrl:it.posterUrl,backdropUrl:it.backdropUrl,
+      type:it.type,currentTime:it.currentTime,duration:it.duration,
+      timestamp:it.updatedAt?new Date(it.updatedAt).getTime():Date.now()
+    }));
+    _saveContinueList(items);
+    renderContinueWatching();
+  }catch(e){console.warn('Continue-watching sync failed:',e.message);}
+}
+
 // ─── Toggle wishlist: DB when logged in, guest localStorage for guests ──────
 async function toggleWishlist(movieId){
   if(!state.user){
@@ -1797,9 +1817,14 @@ function setAuth(token,user){
   state.token=token;state.user=user;
   localStorage.setItem('skflip_token',token);
   localStorage.setItem('skflip_user',JSON.stringify(user));
+  // Clear any continue-watching cache left behind by a previous account on
+  // this device, so it can't flash on screen before the real list (fetched
+  // from MongoDB below) arrives.
+  localStorage.removeItem('skflip_continue');
   renderNav();renderFooter();syncOfferButton();renderContinueWatching();
-  // After login, sync wishlist from database (cross-device)
+  // After login, sync wishlist + continue-watching from database (cross-device)
   syncWishlistFromDB();
+  syncContinueWatchingFromDB();
   // Auto-claim offer if user clicked "Claim" before being signed in
   if(sessionStorage.getItem('skflip_pending_claim')==='1'){
     sessionStorage.removeItem('skflip_pending_claim');
@@ -1815,14 +1840,19 @@ function setAuth(token,user){
 function clearAuth(){
   state.token=null;state.user=null;
   localStorage.removeItem('skflip_token');localStorage.removeItem('skflip_user');
+  // Don't leave this account's continue-watching list cached on a shared device
+  localStorage.removeItem('skflip_continue');
   renderNav();renderFooter();syncOfferButton();renderContinueWatching();
 }
 function loadStoredAuth(){
   const t=localStorage.getItem('skflip_token');const u=localStorage.getItem('skflip_user');
   if(t&&u){try{state.token=t;state.user=JSON.parse(u);}catch(e){clearAuth();}}
   state.offerClaimed=localStorage.getItem('skflip_offer_claimed')==='true';
-  // Sync wishlist from DB on page load if already logged in
-  if(state.user){syncWishlistFromDB().catch(()=>clearAuth());}
+  // Sync wishlist + continue-watching from DB on page load if already logged in
+  if(state.user){
+    syncWishlistFromDB().catch(()=>clearAuth());
+    syncContinueWatchingFromDB();
+  }
 }
 
 async function claimOffer(){
@@ -3616,39 +3646,77 @@ function skipContent(){
 }
 
 // ═══ Continue Watching ═══════════════════════════════════════════════════════
+// Logged-in users: list lives in MongoDB (synced via syncContinueWatchingFromDB),
+// mirrored into localStorage under 'skflip_continue' purely as a fast-read cache
+// for the CURRENTLY signed-in account. Guests (not signed in) get a separate,
+// device-only key so their progress never leaks into — or gets overwritten by —
+// another account on a shared device.
 
 function _getContinueList(){
-  try{ return JSON.parse(localStorage.getItem('skflip_continue')||'[]'); }catch(e){return[];}
+  const key = state.user ? 'skflip_continue' : 'skflip_guest_continue';
+  try{ return JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){return[];}
 }
 function _saveContinueList(list){
-  try{ localStorage.setItem('skflip_continue',JSON.stringify(list)); }catch(e){}
+  const key = state.user ? 'skflip_continue' : 'skflip_guest_continue';
+  try{ localStorage.setItem(key,JSON.stringify(list)); }catch(e){}
 }
 
-function saveWatchProgress(movie,currentTime,duration){
+async function saveWatchProgress(movie,currentTime,duration){
   if(!movie||!movie._id||!currentTime||currentTime<5) return;
   const pct=duration?currentTime/duration:0;
-  if(pct>0.95){ _saveContinueList(_getContinueList().filter(x=>x.id!==movie._id)); renderContinueWatching(); return; }
-  const list=_getContinueList().filter(x=>x.id!==movie._id);
-  list.unshift({
+
+  // Finished watching — drop it from the list entirely
+  if(pct>0.95){
+    _saveContinueList(_getContinueList().filter(x=>x.id!==movie._id));
+    renderContinueWatching();
+    if(state.user){
+      try{ await api('/continue-watching/'+movie._id,{method:'DELETE'}); }
+      catch(e){console.warn('Continue-watching remove failed:',e.message);}
+    }
+    return;
+  }
+
+  const item={
     id:movie._id,title:movie.title,
     posterUrl:movie.posterUrl||'',backdropUrl:movie.backdropUrl||'',
     type:movie.type||'movie',
     currentTime:Math.floor(currentTime),
     duration:Math.floor(duration||0),
     timestamp:Date.now()
-  });
+  };
+  const list=_getContinueList().filter(x=>x.id!==movie._id);
+  list.unshift(item);
   _saveContinueList(list.slice(0,20));
   renderContinueWatching();
+
+  // Logged-in users: persist progress to MongoDB, scoped to their account —
+  // not the device — so it's correct on every device and for every user.
+  if(state.user){
+    try{
+      await api('/continue-watching',{method:'POST',body:JSON.stringify({
+        movieId:item.id,title:item.title,posterUrl:item.posterUrl,backdropUrl:item.backdropUrl,
+        type:item.type,currentTime:item.currentTime,duration:item.duration
+      })});
+    }catch(e){console.warn('Continue-watching save failed:',e.message);}
+  }
 }
 
-function removeContinueWatching(id){
+async function removeContinueWatching(id){
   _saveContinueList(_getContinueList().filter(x=>x.id!==id));
   renderContinueWatching();
+  if(state.user){
+    try{ await api('/continue-watching/'+id,{method:'DELETE'}); }
+    catch(e){console.warn('Continue-watching remove failed:',e.message);}
+  }
 }
 
-function clearAllContinueWatching(){
+async function clearAllContinueWatching(){
   _saveContinueList([]);
   renderContinueWatching();
+  if(state.user){
+    try{ await api('/continue-watching',{method:'DELETE'}); }
+    catch(e){console.warn('Continue-watching clear failed:',e.message);}
+  }
 }
 
 function renderContinueWatching(){
