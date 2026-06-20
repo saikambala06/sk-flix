@@ -1089,8 +1089,7 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 .wishlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
 .wishlist-card{border-radius:var(--radius);overflow:hidden;position:relative;cursor:pointer;transition:transform var(--transition),box-shadow var(--transition)}
 .wishlist-card:hover{transform:scale(1.05) translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.5)}
-.wishlist-remove{position:absolute;top:8px;right:8px;z-index:5;width:28px;height:28px;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);border:none;border-radius:50%;color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem;opacity:0;transition:opacity var(--transition)}
-.wishlist-card:hover .wishlist-remove{opacity:1}
+.wishlist-remove{position:absolute;top:8px;right:8px;z-index:5;width:28px;height:28px;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);border:none;border-radius:50%;color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem;opacity:1;transition:opacity var(--transition),background var(--transition)}
 .wishlist-remove:hover{background:var(--red);color:#fff}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
@@ -1776,14 +1775,26 @@ async function toggleWishlist(movieId){
     }
     return;
   }
-  // Logged-in mode — sync with DB
+  // Logged-in mode — flip the heart/UI instantly (optimistic update), then sync
+  // with the server in the background. This removes the round-trip lag that used
+  // to show up as a delay before the wishlist state visibly changed.
+  const prevList=getWishlist();
+  const idx=prevList.indexOf(movieId);
+  const wasAdded=idx===-1;
+  const optimisticList=wasAdded?[...prevList,movieId]:prevList.filter(id=>id!==movieId);
+  saveWishlist(optimisticList);
+  updateAllWishlistUI();renderNav();
+  showToast(wasAdded?'❤️ Added to wishlist':'Removed from wishlist',wasAdded?'success':'info');
   try{
     const data=await api('/wishlist/toggle/'+movieId,{method:'POST'});
+    // Reconcile with the server's authoritative list (covers races like rapid double-taps)
     saveWishlist(data.movieIds);
-    if(data.added)showToast('❤️ Added to wishlist','success');
-    else showToast('Removed from wishlist','info');
-    updateAllWishlistUI();renderNav();
-  }catch(e){showToast('Wishlist error: '+e.message,'error');}
+  }catch(e){
+    // Server call failed — roll back to the last known-good state
+    saveWishlist(prevList);
+    showToast('Wishlist error: '+e.message,'error');
+  }
+  updateAllWishlistUI();renderNav();
 }
 function updateAllWishlistUI(){
   if(state.heroMovie){
@@ -2865,7 +2876,7 @@ function openWishlist(){
       ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${movie.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center>${this.alt}</div>'"/>`
       :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center">${movie.title}</div>`}
       <div style="padding:10px;background:var(--surface)"><div style="font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${movie.title}</div><div style="font-size:.68rem;color:var(--muted);margin-top:2px">${movie.releaseYear||''}${genres[0]?' · '+genres[0]:''}</div></div>`;
-    card.addEventListener('click',()=>{closeWishlist();openDetail(movie);});grid.appendChild(card);});}
+    card.addEventListener('click',()=>{_rawClose('wishlist');openDetail(movie,true);});grid.appendChild(card);});}
   overlay.classList.add('active');document.body.classList.add('modal-open');_navPush('wishlist');
 }
 function closeWishlist(){ history.back(); }
