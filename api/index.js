@@ -209,10 +209,28 @@ const WishlistSchema = new mongoose.Schema({
   offerClaimed: { type: Boolean, default: false }
 }, { timestamps: true });
 
+// Continue Watching — stores per-user playback progress (cross-device)
+const ContinueItemSchema = new mongoose.Schema({
+  movieId:     { type: String, required: true },
+  title:       { type: String, default: '' },
+  posterUrl:   { type: String, default: '' },
+  backdropUrl: { type: String, default: '' },
+  type:        { type: String, default: 'movie' },
+  currentTime: { type: Number, default: 0 },
+  duration:    { type: Number, default: 0 },
+  updatedAt:   { type: Date, default: Date.now }
+}, { _id: false });
+
+const ContinueWatchingSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  items:  [ContinueItemSchema]
+}, { timestamps: true });
+
 // Use existing model if already compiled (prevents OverwriteModelError in serverless)
 const User     = mongoose.models.User     || mongoose.model('User',     UserSchema);
 const Movie    = mongoose.models.Movie    || mongoose.model('Movie',    MovieSchema);
 const Wishlist = mongoose.models.Wishlist || mongoose.model('Wishlist', WishlistSchema);
+const ContinueWatching = mongoose.models.ContinueWatching || mongoose.model('ContinueWatching', ContinueWatchingSchema);
 
 // -------------------------------------------------------------
 // MIDDLEWARE: Ensure DB is connected before every API call
@@ -663,6 +681,72 @@ app.post('/api/wishlist/claim', requireAuth, async (req, res) => {
       { upsert: true, new: true }
     ).lean();
     res.json({ offerClaimed: w.offerClaimed });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// -------------------------------------------------------------
+// CONTINUE WATCHING ROUTES (Authenticated) — per-user, cross-device
+// -------------------------------------------------------------
+
+// GET /api/continue-watching — fetch current user's in-progress list
+app.get('/api/continue-watching', requireAuth, async (req, res) => {
+  try {
+    const cw = await ContinueWatching.findOne({ userId: req.user.id }).lean();
+    res.json({ items: cw ? cw.items : [] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/continue-watching — upsert progress for one title
+// (most-recently-watched first, capped at 20 entries per user)
+app.post('/api/continue-watching', requireAuth, async (req, res) => {
+  try {
+    const { movieId, title, posterUrl, backdropUrl, type, currentTime, duration } = req.body;
+    if (!movieId) {
+      return res.status(400).json({ error: 'movieId is required.' });
+    }
+
+    let cw = await ContinueWatching.findOne({ userId: req.user.id });
+    if (!cw) cw = new ContinueWatching({ userId: req.user.id, items: [] });
+
+    cw.items = cw.items.filter(it => it.movieId !== movieId);
+    cw.items.unshift({
+      movieId,
+      title: title || '',
+      posterUrl: posterUrl || '',
+      backdropUrl: backdropUrl || '',
+      type: type || 'movie',
+      currentTime: Math.floor(currentTime) || 0,
+      duration: Math.floor(duration) || 0,
+      updatedAt: new Date()
+    });
+    cw.items = cw.items.slice(0, 20);
+
+    await cw.save();
+    res.json({ items: cw.items });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/continue-watching/:movieId — remove a single title (e.g. finished or dismissed)
+app.delete('/api/continue-watching/:movieId', requireAuth, async (req, res) => {
+  try {
+    const cw = await ContinueWatching.findOneAndUpdate(
+      { userId: req.user.id },
+      { $pull: { items: { movieId: req.params.movieId } } },
+      { new: true, upsert: true }
+    ).lean();
+    res.json({ items: cw ? cw.items : [] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/continue-watching — clear the entire list ("Clear All")
+app.delete('/api/continue-watching', requireAuth, async (req, res) => {
+  try {
+    await ContinueWatching.findOneAndUpdate(
+      { userId: req.user.id },
+      { $set: { items: [] } },
+      { upsert: true }
+    );
+    res.json({ items: [] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
