@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
 const app = express();
 
@@ -25,6 +26,50 @@ if (!MONGODB_URI) {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'skflip_super_secret_key_2024_change_me';
+
+// -------------------------------------------------------------
+// EMAIL (Nodemailer + Gmail) — used for password reset codes
+// -------------------------------------------------------------
+// Set these in Vercel → Settings → Environment Variables:
+//   EMAIL_USER = your Gmail address
+//   EMAIL_PASS = a Gmail App Password (NOT your normal password)
+//   Generate one at: https://myaccount.google.com/apppasswords
+//   (requires 2-Step Verification to be enabled on the Gmail account)
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+
+if (!EMAIL_USER || !EMAIL_PASS) {
+  console.error('⚠️  EMAIL_USER / EMAIL_PASS environment variables are not set.');
+  console.error('   Password reset emails will fail until these are configured.');
+  console.error('   Go to your Vercel project → Settings → Environment Variables');
+}
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: { user: EMAIL_USER, pass: EMAIL_PASS }
+});
+
+function generateResetCode() {
+  // 6-digit numeric code, e.g. "042817"
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendResetCodeEmail(toEmail, code, name) {
+  await transporter.sendMail({
+    from: `"SkFlip" <${EMAIL_USER}>`,
+    to: toEmail,
+    subject: 'Your SkFlip password reset code',
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#111">
+        <h2 style="margin-bottom:4px">SkFlip</h2>
+        <p>Hi ${name || 'there'},</p>
+        <p>We received a request to reset your SkFlip password. Use the verification code below to continue:</p>
+        <div style="font-size:32px;font-weight:700;letter-spacing:6px;background:#f4f4f4;padding:16px 24px;border-radius:8px;text-align:center;margin:24px 0">${code}</div>
+        <p>This code expires in <strong>10 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.</p>
+      </div>
+    `
+  });
+}
 
 // Track connection state to avoid reconnecting on every serverless invocation
 let isConnected = false;
@@ -120,7 +165,9 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, default: 'user', enum: ['user', 'admin'] }
+  role: { type: String, default: 'user', enum: ['user', 'admin'] },
+  resetCode: { type: String },
+  resetCodeExpiry: { type: Date }
 }, { timestamps: true });
 
 const EpisodeSchema = new mongoose.Schema({
@@ -294,6 +341,80 @@ app.post('/api/auth/login', async (req, res) => {
         role: user.role
       }
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Forgot Password — Step 1: email a verification code
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required.' });
+    }
+
+    const user = await User.findOne({ email });
+
+    // Always return the same generic message whether or not the account
+    // exists — this prevents leaking which emails are registered.
+    const genericMessage = 'If an account exists for that email, a verification code has been sent.';
+
+    if (!user) {
+      return res.json({ message: genericMessage });
+    }
+
+    const code = generateResetCode();
+    user.resetCode = code;
+    user.resetCodeExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save();
+
+    try {
+      await sendResetCodeEmail(user.email, code, user.name);
+    } catch (mailErr) {
+      console.error('❌ Failed to send reset code email:', mailErr.message);
+      return res.status(500).json({ error: 'Failed to send verification email. Please try again in a moment.' });
+    }
+
+    res.json({ message: genericMessage });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Forgot Password — Step 2: verify the code and set a new password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Email, code, and new password are required.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user || !user.resetCode || !user.resetCodeExpiry) {
+      return res.status(400).json({ error: 'Invalid or expired verification code.' });
+    }
+
+    if (user.resetCodeExpiry < new Date()) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+
+    if (user.resetCode !== code) {
+      return res.status(400).json({ error: 'Invalid verification code.' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetCode = undefined;
+    user.resetCodeExpiry = undefined;
+    await user.save();
+
+    res.json({ message: 'Password has been reset successfully. You can now sign in.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
