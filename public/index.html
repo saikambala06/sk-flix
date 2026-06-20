@@ -122,13 +122,18 @@ img{display:block;max-width:100%}
 .card-row::-webkit-scrollbar{display:none}
 
 .movie-card{flex-shrink:0;width:clamp(130px,15vw,190px);position:relative;cursor:pointer;border-radius:var(--radius);overflow:visible;transition:transform var(--transition),box-shadow var(--transition)}
-.movie-card:hover{transform:scale(1.07) translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 30px rgba(224,168,48,.15);z-index:10}
-.movie-card:hover .card-overlay{opacity:1}
-.movie-card:hover .card-img{filter:brightness(.65)}
+/* Hover-lift/scale/glow only on devices with a real mouse. On touch
+   devices there's no hover to leave, so :hover gets triggered by the tap
+   and stays "stuck" — the card stays scaled up and lifted above its row,
+   looking like a floating picture/popup when scrolling back past it. */
+@media (hover:hover) and (pointer:fine){
+  .movie-card:hover{transform:scale(1.07) translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 30px rgba(224,168,48,.15);z-index:10}
+  .movie-card:hover .card-overlay{opacity:1}
+  .movie-card:hover .card-img{filter:brightness(.65)}
+}
 .movie-card-inner{border-radius:var(--radius);overflow:hidden;position:relative}
 .card-img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--surface);transition:filter var(--transition);border-radius:var(--radius)}
 .card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.3) 50%,transparent 100%);opacity:0;transition:opacity var(--transition);display:flex;flex-direction:column;justify-content:flex-end;padding:12px;border-radius:var(--radius);pointer-events:none}
-.movie-card:hover .card-overlay{opacity:1}
 .card-play-btn{width:40px;height:40px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;color:#000;box-shadow:0 4px 20px rgba(224,168,48,.5);transition:transform var(--transition);pointer-events:all}
 .card-play-btn:hover{transform:scale(1.1)}
 .card-wish-btn{position:absolute;top:8px;left:50%;transform:translateX(-50%) translateY(-30px);opacity:0;width:32px;height:32px;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;color:var(--muted);transition:all var(--transition);z-index:5;padding:0}
@@ -267,9 +272,14 @@ img{display:block;max-width:100%}
 .forgot-intro{color:var(--muted);font-size:.86rem;line-height:1.6;margin-bottom:20px}
 
 /* ── Prime-Video style detail overlay ── */
-.detail-overlay-prime{position:fixed;inset:0;z-index:2000;background:#0a0a12;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .32s cubic-bezier(0.4,0,0.2,1), transform .35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;transform:translateY(32px);}
-.detail-overlay-prime.active{opacity:1;pointer-events:all;transform:translateY(0);}
-.detail-overlay-prime.closing{opacity:0;transform:translateY(32px);pointer-events:none;}
+/* Fully opaque slide-up sheet — no opacity fade, so the dashboard behind
+   it is never visible through it, even mid-animation. visibility:hidden
+   on the resting (closed) state guarantees zero pixels ever show, even
+   if a mobile browser's address-bar show/hide makes the real viewport
+   height a few px shorter than the translateY(100%) offset expects. */
+.detail-overlay-prime{position:fixed;inset:0;z-index:2000;background:#0a0a12;overflow-y:auto;opacity:1;visibility:hidden;pointer-events:none;transition:transform .32s cubic-bezier(0.16,1,0.3,1);display:flex;flex-direction:column;transform:translateY(100%);will-change:transform;}
+.detail-overlay-prime.active{visibility:visible;pointer-events:all;transform:translateY(0);}
+.detail-overlay-prime.closing{visibility:visible;transform:translateY(100%);pointer-events:none;transition:transform .3s cubic-bezier(0.4,0,0.2,1);}
 .prime-detail-wrap{max-width:780px;margin:0 auto;width:100%;padding:0 0 80px;}
 /* poster / backdrop top area */
 .prime-backdrop{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#111;flex-shrink:0;}
@@ -1672,6 +1682,30 @@ const GENRES=[
   {name:'Historical',cls:'g11',icon:'⏳'},{name:'Adventure',cls:'g12',icon:'🗺️'},
 ];
 
+// ── Fix: opening a card/overlay used to snap the background page to the
+// top before the detail screen covered it. body.modal-open sets
+// position:fixed with no top offset, so as soon as it's applied the
+// document collapses and the browser yanks scrollY back to 0 — visible
+// as a jolt/flash behind the new screen. We watch for modal-open being
+// toggled (anywhere it's added/removed in the app) and pin the body at
+// its current scroll offset while locked, then restore the exact scroll
+// position once every overlay is closed again.
+(function(){
+  let savedScrollY=0, locked=false;
+  new MutationObserver(()=>{
+    const isOpen=document.body.classList.contains('modal-open');
+    if(isOpen&&!locked){
+      locked=true;
+      savedScrollY=window.scrollY||document.documentElement.scrollTop||0;
+      document.body.style.top=(-savedScrollY)+'px';
+    }else if(!isOpen&&locked){
+      locked=false;
+      document.body.style.top='';
+      window.scrollTo(0,savedScrollY);
+    }
+  }).observe(document.body,{attributes:true,attributeFilter:['class']});
+})();
+
 function normalizeGenres(genres){
   if(!genres)return[];
   if(Array.isArray(genres))return genres.map(g=>String(g).trim()).filter(Boolean);
@@ -2606,10 +2640,19 @@ ${(()=>{
   `;
 
   const overlay=document.getElementById('detailOverlay');
-  overlay.classList.add('active');
+  overlay.classList.remove('closing');
   overlay.scrollTop=0;
   document.body.classList.add('modal-open');
-  
+  // Let the heavy DOM we just inserted (backdrop image, episode list,
+  // "more like this" grid) get laid out and painted first, THEN kick off
+  // the open transition on a clean frame — otherwise the transition starts
+  // at the exact same instant as that big layout pass and stutters.
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      overlay.classList.add('active');
+    });
+  });
+
   if(replaceHistory) {
     history.replaceState({skflip: 'detail'}, '', location.href);
   } else {
@@ -2875,12 +2918,30 @@ function openWishlist(){
   const grid=document.getElementById('wishlistGrid');
   if(wishMovies.length===0){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;padding:60px 20px"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>Your wishlist is empty. Browse movies and tap the heart icon to save them here.</span></div>`;}
   else{wishMovies.forEach(movie=>{const card=document.createElement('div');card.className='wishlist-card';const imgSrc=movie.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');const genres=movie._genres_normalized||normalizeGenres(movie.genres);
-    card.innerHTML=`<button class="wishlist-remove" onclick="event.stopPropagation();toggleWishlist('${movie._id}').then(()=>openWishlist())" title="Remove">✕</button>
+    card.innerHTML=`<button class="wishlist-remove" onclick="event.stopPropagation();removeWishlistCard('${movie._id}',this)" title="Remove">✕</button>
       ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${movie.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center>${this.alt}</div>'"/>`
       :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center">${movie.title}</div>`}
       <div style="padding:10px;background:var(--surface)"><div style="font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${movie.title}</div><div style="font-size:.68rem;color:var(--muted);margin-top:2px">${movie.releaseYear||''}${genres[0]?' · '+genres[0]:''}</div></div>`;
     card.addEventListener('click',()=>{_rawClose('wishlist');openDetail(movie,true);});grid.appendChild(card);});}
   overlay.classList.add('active');document.body.classList.add('modal-open');_navPush('wishlist');
+}
+// Removing a card used to wait for toggleWishlist()'s whole promise — which,
+// for logged-in users, doesn't resolve until the server round-trip finishes —
+// before rebuilding the grid. That round-trip was the visible lag. Now the
+// card (and the title count) update immediately on tap; the actual
+// add/remove sync with localStorage/server still happens via toggleWishlist,
+// just without the UI waiting on it.
+function removeWishlistCard(movieId,btnEl){
+  const grid=document.getElementById('wishlistGrid');
+  const card=btnEl.closest('.wishlist-card');
+  if(card)card.remove();
+  const remaining=grid?grid.querySelectorAll('.wishlist-card').length:0;
+  const countEl=document.querySelector('.wishlist-count');
+  if(countEl)countEl.textContent=remaining+' title'+(remaining!==1?'s':'');
+  if(grid&&remaining===0){
+    grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;padding:60px 20px"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>Your wishlist is empty. Browse movies and tap the heart icon to save them here.</span></div>`;
+  }
+  toggleWishlist(movieId);
 }
 function closeWishlist(){ history.back(); }
 
