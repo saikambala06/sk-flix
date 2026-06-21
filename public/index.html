@@ -3187,13 +3187,17 @@ function showControls(){
   scheduleControlsAutoHide();
 }
 
+// Tracks whether user's pointer is inside the controls bar
+let _controlsHovered=false;
+
 function scheduleControlsAutoHide(){
   // While the video is playing (and nothing else needs them on-screen),
   // controls auto-hide 2 seconds after they were last shown/interacted with.
+  // But NEVER hide while the user is hovering/touching the controls bar.
   clearTimeout(controlsTimeout);
-  if(video.paused||video.ended||settingsOpen)return;
+  if(video.paused||video.ended||settingsOpen||_controlsHovered)return;
   controlsTimeout=setTimeout(()=>{
-    wrapper.classList.add('controls-hidden');
+    if(!_controlsHovered) wrapper.classList.add('controls-hidden');
   },2000);
 }
 
@@ -3551,6 +3555,28 @@ document.addEventListener('click',e=>{
     closeSettingsPanel();
   }
 });
+
+// ── Controls bar hover/touch guard ──────────────────────────────────────────
+// While the user's finger or mouse is anywhere inside the controls bar,
+// cancel the auto-hide timer so controls never disappear mid-interaction.
+const controlsContainer=document.getElementById('controlsContainer');
+controlsContainer.addEventListener('mouseenter',()=>{
+  _controlsHovered=true;
+  clearTimeout(controlsTimeout);
+});
+controlsContainer.addEventListener('mouseleave',()=>{
+  _controlsHovered=false;
+  scheduleControlsAutoHide();
+});
+// Touch equivalent: touchstart inside controls cancels hide; touchend restarts timer
+controlsContainer.addEventListener('touchstart',()=>{
+  _controlsHovered=true;
+  clearTimeout(controlsTimeout);
+},{passive:true});
+controlsContainer.addEventListener('touchend',()=>{
+  _controlsHovered=false;
+  scheduleControlsAutoHide();
+},{passive:true});
 
 progressArea.addEventListener('mousemove',e=>{
   if(!video.duration||!isFinite(video.duration))return;
