@@ -572,6 +572,12 @@ img{display:block;max-width:100%}
 #playerOverlay .player-wrapper.settings-active .center-play-overlay{z-index:30;
   opacity:0!important;pointer-events:none!important
 }
+/* While buffering (e.g. right after a forward/back skip) only the loading
+   spinner should be visible — the persistent center play/pause button must
+   not sit on top of it. */
+#playerOverlay .player-wrapper.buffering .center-play-overlay{z-index:30;
+  opacity:0!important;pointer-events:none!important
+}
 #playerOverlay .center-play-circle{
   width:82px;height:82px;border-radius:50%;
   background:transparent;border:none;
@@ -587,17 +593,24 @@ img{display:block;max-width:100%}
 #playerOverlay .center-play-circle:active{transform:scale(.9)}
 #playerOverlay .center-play-circle .cp-icon{pointer-events:none;line-height:1}
 #playerOverlay .skip-indicator{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  padding:14px 22px;border-radius:50px;font-size:.95rem;font-weight:700;
-  display:flex;align-items:center;gap:8px;pointer-events:none;z-index:7;
-  opacity:0;transition:opacity .18s ease;
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 4px 24px rgba(0,0,0,.45);
+  position:absolute;top:50%;transform:translateY(-50%) scale(0.85);
+  background:rgba(255,255,255,.15);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  width:72px;height:72px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;pointer-events:none;z-index:7;
+  opacity:0;font-size:.7rem;font-weight:700;letter-spacing:.03em;
+  border:1.5px solid rgba(255,255,255,.22);
 }
-#playerOverlay .skip-indicator.left{left:12%}
-#playerOverlay .skip-indicator.right{right:12%}
-#playerOverlay .skip-indicator.show{opacity:1}
+#playerOverlay .skip-indicator i{font-size:1.15rem;}
+#playerOverlay .skip-indicator.left{left:14%}
+#playerOverlay .skip-indicator.right{right:14%}
+@keyframes skipPop{
+  0%  {opacity:0;transform:translateY(-50%) scale(0.75);}
+  18% {opacity:1;transform:translateY(-50%) scale(1.08);}
+  40% {opacity:1;transform:translateY(-50%) scale(1);}
+  100%{opacity:0;transform:translateY(-50%) scale(0.9);}
+}
+#playerOverlay .skip-indicator.show{animation:skipPop .65s cubic-bezier(0.4,0,0.2,1) forwards;}
 /* Ripple zones for double-click visual feedback */
 #playerOverlay .seek-ripple{
   position:absolute;top:0;bottom:0;width:33.33%;pointer-events:none;z-index:5;
@@ -1962,7 +1975,7 @@ function closeUserMenu(){const m=document.getElementById('userMenu');if(m)m.clas
 document.addEventListener('click',e=>{if(!e.target.closest('.user-avatar')&&!e.target.closest('.user-menu'))closeUserMenu();});
 
 function openAuth(tab){switchAuthTab(tab);document.getElementById('authError').classList.remove('show');document.getElementById('authOverlay').classList.add('active');document.body.classList.add('modal-open');_navPush('auth');}
-function closeAuth(){ history.back(); }
+function closeAuth(){ _rawClose('auth'); _skipNextPopstate=true; history.back(); }
 function switchAuthTab(tab){
   document.getElementById('tabLogin').classList.toggle('active',tab==='login');document.getElementById('tabSignup').classList.toggle('active',tab==='signup');
   document.getElementById('loginForm').style.display=tab==='login'?'block':'none';document.getElementById('signupForm').style.display=tab==='signup'?'block':'none';
@@ -2990,6 +3003,7 @@ let _nextEpPrompted=false;
 let _skipStart=-1,_skipEnd=-1;
 
 // History Navigation (mobile back button support)
+let _skipNextPopstate=false;
 function _navPush(id){
   history.pushState({skflip:id},'',location.href);
 }
@@ -3030,6 +3044,7 @@ function _rawClose(id){
 }
 
 window.addEventListener('popstate',e=>{
+  if(_skipNextPopstate){_skipNextPopstate=false;return;}
   if(document.getElementById('playerOverlay').classList.contains('active')){_rawClose('player');return;}
   if(document.getElementById('detailOverlay').classList.contains('active')){_rawClose('detail');return;}
   if(document.getElementById('adminOverlay').classList.contains('active')){_rawClose('admin');return;}
@@ -3055,6 +3070,8 @@ function formatTime(sec){
 
 function showPlayerToast(msg){
   if(!playerToastContainer)return;
+  // Clear any toast still showing instead of stacking duplicates on rapid taps
+  playerToastContainer.querySelectorAll('.player-mini-toast').forEach(el=>el.remove());
   const t=document.createElement('div');
   t.className='player-mini-toast';
   t.textContent=msg;
@@ -3097,16 +3114,24 @@ function togglePlay(){
 function skipVideo(seconds){
   if(!video.duration)return;
   video.currentTime=Math.max(0,Math.min(video.duration,video.currentTime+seconds));
+  updateProgress();
   const indicator=seconds<0?skipLeft:skipRight;
+  const opposite=seconds<0?skipRight:skipLeft;
   const ripple=seconds<0?document.getElementById('seekRippleLeft'):document.getElementById('seekRippleRight');
+  // Instantly clear the opposite indicator to avoid both showing at once
+  opposite.classList.remove('show');
+  clearTimeout(opposite._hideTimer);
+  // Restart animation on the active indicator
+  indicator.classList.remove('show');
+  void indicator.offsetWidth;
   indicator.classList.add('show');
+  clearTimeout(indicator._hideTimer);
+  indicator._hideTimer=setTimeout(()=>indicator.classList.remove('show'),700);
   if(ripple){
     ripple.classList.remove('flash');
-    void ripple.offsetWidth; // reflow to restart animation
+    void ripple.offsetWidth;
     ripple.classList.add('flash');
   }
-  clearTimeout(indicator._hideTimer);
-  indicator._hideTimer=setTimeout(()=>indicator.classList.remove('show'),550);
 }
 
 function updateVolume(value){
@@ -3366,10 +3391,10 @@ video.addEventListener('loadedmetadata',()=>{
   }
 });
 video.addEventListener('durationchange',()=>{if(video.duration)timeDuration.textContent=formatTime(video.duration);});
-video.addEventListener('waiting',()=>spinner.classList.add('show'));
-video.addEventListener('canplay',()=>spinner.classList.remove('show'));
-video.addEventListener('playing',()=>spinner.classList.remove('show'));
-video.addEventListener('error',()=>{spinner.classList.remove('show');showToast('Video failed to load.','error');});
+video.addEventListener('waiting',()=>{spinner.classList.add('show');wrapper.classList.add('buffering');});
+video.addEventListener('canplay',()=>{spinner.classList.remove('show');wrapper.classList.remove('buffering');});
+video.addEventListener('playing',()=>{spinner.classList.remove('show');wrapper.classList.remove('buffering');});
+video.addEventListener('error',()=>{spinner.classList.remove('show');wrapper.classList.remove('buffering');showToast('Video failed to load.','error');});
 video.addEventListener('ended',()=>{
   if(!isLooping){
     btnPlay.querySelector('i').className='fas fa-redo';
@@ -3561,9 +3586,37 @@ progressArea.addEventListener('touchstart',e=>{isDragging=true;progressArea.clas
 document.addEventListener('touchmove',e=>{if(isDragging)seekTo(e);},{passive:true});
 document.addEventListener('touchend',()=>{if(!isDragging)return;isDragging=false;progressArea.classList.remove('dragging');scheduleControlsAutoHide();});
 
-wrapper.addEventListener('click',e=>{
-  if(e.target.closest('.center-play-circle')||e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.shortcuts-overlay')||e.target.closest('.cine-topbar')||e.target.closest('.next-ep-overlay')||e.target.closest('.poster-overlay'))return;
-  // Video surface tap only toggles controls. It never pauses/plays.
+// Double-tap state tracker
+const _doubleTap={timer:null,lastX:0,lastY:0,count:0};
+const DOUBLE_TAP_MS=280;
+
+// Called on double-tap only — seeks if tap is in outer 25% and above controls bar
+function _seekZoneTap(clientX, clientY){
+  const rect=wrapper.getBoundingClientRect();
+  const x=clientX-rect.left;
+  const quarter=rect.width/4;
+  if((rect.bottom-clientY)<160)return false;
+  if(x<quarter){
+    skipVideo(-10);
+    showPlayerToast('↶ 10 seconds');
+    const ripple=document.querySelector('#playerOverlay .seek-ripple.left');
+    if(ripple){ ripple.classList.remove('flash'); void ripple.offsetWidth; ripple.classList.add('flash'); }
+    showControls();
+    return true;
+  }
+  if(x>rect.width-quarter){
+    skipVideo(10);
+    showPlayerToast('10 seconds ↷');
+    const ripple=document.querySelector('#playerOverlay .seek-ripple.right');
+    if(ripple){ ripple.classList.remove('flash'); void ripple.offsetWidth; ripple.classList.add('flash'); }
+    showControls();
+    return true;
+  }
+  return false;
+}
+
+// Single tap: show/hide controls only
+function _handleSingleTap(){
   if(wrapper.classList.contains('controls-hidden')){
     showControls();
   }else{
@@ -3571,18 +3624,40 @@ wrapper.addEventListener('click',e=>{
     wrapper.classList.add('controls-hidden');
     clearTimeout(controlsTimeout);
   }
+}
+
+wrapper.addEventListener('click',e=>{
+  if(e.target.closest('.center-play-circle')||e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.shortcuts-overlay')||e.target.closest('.cine-topbar')||e.target.closest('.next-ep-overlay')||e.target.closest('.poster-overlay'))return;
+  _doubleTap.count++;
+  clearTimeout(_doubleTap.timer);
+  const cx=e.clientX, cy=e.clientY;
+  if(_doubleTap.count>=2){
+    _doubleTap.count=0;
+    _seekZoneTap(cx,cy);
+  }else{
+    _doubleTap.timer=setTimeout(()=>{
+      _doubleTap.count=0;
+      _handleSingleTap();
+    },DOUBLE_TAP_MS);
+  }
 });
 
 wrapper.addEventListener('touchend',e=>{
   if(e.target.closest('.center-play-circle')||e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.shortcuts-overlay')||e.target.closest('.cine-topbar')||e.target.closest('.next-ep-overlay')||e.target.closest('.poster-overlay'))return;
   e.preventDefault();
-  // Mobile touch on video surface only toggles controls.
-  if(wrapper.classList.contains('controls-hidden')){
-    showControls();
+  const touch=e.changedTouches&&e.changedTouches[0];
+  if(!touch)return;
+  const cx=touch.clientX, cy=touch.clientY;
+  _doubleTap.count++;
+  clearTimeout(_doubleTap.timer);
+  if(_doubleTap.count>=2){
+    _doubleTap.count=0;
+    if(!_seekZoneTap(cx,cy)) _handleSingleTap();
   }else{
-    if(settingsOpen) closeSettingsPanel();
-    wrapper.classList.add('controls-hidden');
-    clearTimeout(controlsTimeout);
+    _doubleTap.timer=setTimeout(()=>{
+      _doubleTap.count=0;
+      _handleSingleTap();
+    },DOUBLE_TAP_MS);
   }
 },{passive:false});
 
@@ -3638,23 +3713,6 @@ document.addEventListener('keydown',e=>{
 });
 
 wrapper.addEventListener('contextmenu',e=>e.preventDefault());
-
-// Double click seek like streaming apps: left = back 10s, right = forward 10s
-wrapper.addEventListener('dblclick',e=>{
-  const rect=wrapper.getBoundingClientRect();
-  const x=e.clientX-rect.left;
-  if(x < rect.width/2){
-    skipVideo(-10);
-    showPlayerToast('↶ 10 seconds');
-    const ripple=document.querySelector('#playerOverlay .seek-ripple.left');
-    if(ripple){ ripple.classList.remove('flash'); void ripple.offsetWidth; ripple.classList.add('flash'); }
-  }else{
-    skipVideo(10);
-    showPlayerToast('10 seconds ↷');
-    const ripple=document.querySelector('#playerOverlay .seek-ripple.right');
-    if(ripple){ ripple.classList.remove('flash'); void ripple.offsetWidth; ripple.classList.add('flash'); }
-  }
-});
 
 function setNextEpisode(epData){
   _nextEpData=epData;
