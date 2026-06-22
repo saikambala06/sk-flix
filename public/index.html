@@ -482,6 +482,20 @@ img{display:block;max-width:100%}
 #playerOverlay .player-wrapper video{
   width:100%;height:100%;display:block;object-fit:contain;background:#000
 }
+#playerOverlay .player-wrapper.fit-cover video{object-fit:cover}
+#pinchFitToast{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(.82);
+  background:rgba(10,10,18,.85);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:40px;padding:11px 22px;
+  display:flex;align-items:center;gap:9px;
+  color:#fff;font-size:.85rem;font-weight:700;letter-spacing:.4px;
+  pointer-events:none;z-index:20;white-space:nowrap;
+  opacity:0;transition:opacity .2s ease,transform .2s ease
+}
+#pinchFitToast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #playerOverlay .cine-topbar{
   position:absolute;top:0;left:0;right:0;z-index:8;
   display:grid;grid-template-columns:auto minmax(0,1fr) auto;
@@ -688,6 +702,35 @@ img{display:block;max-width:100%}
 @media(max-width:400px){
   #playerOverlay .next-ep-thumb{display:none}
 }
+
+/* ── Next-ep: landscape / horizontal mode ── */
+@media(orientation:landscape) and (max-height:500px){
+  #playerOverlay .next-ep-overlay{
+    bottom:72px;right:12px;
+    width:min(340px,calc(100% - 24px))
+  }
+  #playerOverlay .next-ep-card{
+    padding:10px 12px;gap:10px;border-radius:12px
+  }
+  #playerOverlay .next-ep-thumb{display:none}
+  #playerOverlay .next-ep-label{font-size:.55rem;letter-spacing:1.5px;margin-bottom:2px}
+  #playerOverlay .next-ep-title{font-size:.8rem;margin-bottom:2px;-webkit-line-clamp:1}
+  #playerOverlay .next-ep-countdown{font-size:.72rem}
+  #playerOverlay .next-ep-play-btn{
+    padding:8px 14px;font-size:.75rem;gap:5px;border-radius:40px;
+    box-shadow:0 4px 16px rgba(232,69,69,.4)
+  }
+}
+
+/* ── Swipe-dismiss: dragging state ── */
+#playerOverlay .next-ep-overlay{
+  touch-action:none;
+  will-change:transform,opacity
+}
+#playerOverlay .next-ep-overlay.swiping{
+  transition:none !important
+}
+
 @keyframes seekFlash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
 #playerOverlay .controls-container{
   position:absolute;bottom:0;left:0;right:0;z-index:6;
@@ -1505,6 +1548,7 @@ body.blur-bg #home-screen {
 
     <div class="subtitle-display" id="subtitleDisplay" style="display:none"><span></span></div>
     <div class="player-toast-container" id="playerToastContainer"></div>
+    <div id="pinchFitToast"></div>
 
     <div class="controls-container" id="controlsContainer">
       <div class="progress-area" id="progressArea">
@@ -3608,8 +3652,13 @@ progressArea.addEventListener('mousedown',e=>{
 });
 document.addEventListener('mousemove',e=>{if(isDragging)seekTo(e);});
 document.addEventListener('mouseup',()=>{if(!isDragging)return;isDragging=false;progressArea.classList.remove('dragging');scheduleControlsAutoHide();});
-progressArea.addEventListener('touchstart',e=>{isDragging=true;progressArea.classList.add('dragging');clearTimeout(controlsTimeout);seekTo(e);},{passive:true});
-document.addEventListener('touchmove',e=>{if(isDragging)seekTo(e);},{passive:true});
+progressArea.addEventListener('touchstart',e=>{
+  if(window._pinchActive||window._pinchJustFired)return;
+  isDragging=true;progressArea.classList.add('dragging');clearTimeout(controlsTimeout);seekTo(e);
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(isDragging&&!(window._pinchActive||window._pinchJustFired))seekTo(e);
+},{passive:true});
 document.addEventListener('touchend',()=>{if(!isDragging)return;isDragging=false;progressArea.classList.remove('dragging');scheduleControlsAutoHide();});
 
 // Double-tap state tracker
@@ -3654,6 +3703,7 @@ function _handleSingleTap(){
 
 wrapper.addEventListener('click',e=>{
   if(e.target.closest('.center-play-circle')||e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.shortcuts-overlay')||e.target.closest('.cine-topbar')||e.target.closest('.next-ep-overlay')||e.target.closest('.poster-overlay'))return;
+  if(window._pinchActive||window._pinchJustFired){_doubleTap.count=0;clearTimeout(_doubleTap.timer);return;}
   _doubleTap.count++;
   clearTimeout(_doubleTap.timer);
   const cx=e.clientX, cy=e.clientY;
@@ -3670,6 +3720,7 @@ wrapper.addEventListener('click',e=>{
 
 wrapper.addEventListener('touchend',e=>{
   if(e.target.closest('.center-play-circle')||e.target.closest('.controls-container')||e.target.closest('.settings-panel')||e.target.closest('.shortcuts-overlay')||e.target.closest('.cine-topbar')||e.target.closest('.next-ep-overlay')||e.target.closest('.poster-overlay'))return;
+  if(window._pinchActive||window._pinchJustFired){_doubleTap.count=0;clearTimeout(_doubleTap.timer);return;}
   e.preventDefault();
   const touch=e.changedTouches&&e.changedTouches[0];
   if(!touch)return;
@@ -3686,6 +3737,93 @@ wrapper.addEventListener('touchend',e=>{
     },DOUBLE_TAP_MS);
   }
 },{passive:false});
+
+// ── Pinch-to-fit ──────────────────────────────────────────────────────────────
+// KEY FIX: _fitTriggered separates "gesture recognised" from "_pinchActive".
+// _pinchActive stays TRUE until fingers physically leave the screen so that
+// endPinch() always runs and always sets _pinchJustFired=true for the 500 ms
+// cooldown — even on a 2nd, 3rd pinch after fit is already applied.
+//
+// Landscape only: pinch-OUT → cover, pinch-IN → contain.
+// Portrait / rotate / fullscreen-exit → cover auto-removed.
+(function(){
+  const SPREAD=1.18, SHRINK=0.84;
+  let _startDist=0, _fitTriggered=false, _toastTimer=null;
+
+  window._pinchActive    = false; // 2+ fingers on screen RIGHT NOW
+  window._pinchJustFired = false; // 500 ms cooldown after fingers lift
+
+  function ptDist(e){
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+  function isLandscape(){ return window.innerWidth>window.innerHeight; }
+  function resetFitCover(){ wrapper.classList.remove('fit-cover'); }
+
+  function showToast(cover){
+    const el=document.getElementById('pinchFitToast');
+    if(!el)return;
+    clearTimeout(_toastTimer);
+    el.innerHTML=cover
+      ?`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg> Fill Screen`
+      :`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg> Original Size`;
+    el.classList.add('show');
+    _toastTimer=setTimeout(()=>el.classList.remove('show'),2000);
+  }
+
+  // Called when both fingers lift — ALWAYS sets the cooldown
+  function endPinch(){
+    if(!window._pinchActive)return;
+    window._pinchActive=false;
+    _fitTriggered=false;
+    window._pinchJustFired=true;
+    setTimeout(()=>{ window._pinchJustFired=false; },500);
+    _doubleTap.count=0;
+    clearTimeout(_doubleTap.timer);
+    if(isDragging){ isDragging=false; progressArea.classList.remove('dragging'); }
+  }
+
+  // capture:true → runs before progressArea / wrapper listeners
+  document.addEventListener('touchstart',e=>{
+    if(!document.getElementById('playerOverlay').classList.contains('active'))return;
+    if(e.touches.length===2){
+      window._pinchActive=true;
+      window._pinchJustFired=false;
+      _fitTriggered=false;
+      _doubleTap.count=0;
+      clearTimeout(_doubleTap.timer);
+      if(isDragging){ isDragging=false; progressArea.classList.remove('dragging'); }
+      if(isLandscape()) _startDist=ptDist(e);
+    }
+  },{passive:true,capture:true});
+
+  wrapper.addEventListener('touchmove',e=>{
+    if(!window._pinchActive||e.touches.length!==2||_fitTriggered)return;
+    if(!isLandscape())return;
+    const ratio=ptDist(e)/_startDist;
+    if(ratio>=SPREAD){
+      _fitTriggered=true; // stop re-checking, but keep _pinchActive=true
+      if(!wrapper.classList.contains('fit-cover')){ wrapper.classList.add('fit-cover'); showToast(true); }
+    }else if(ratio<=SHRINK){
+      _fitTriggered=true;
+      if(wrapper.classList.contains('fit-cover')){ wrapper.classList.remove('fit-cover'); showToast(false); }
+    }
+  },{passive:true});
+
+  // capture:true on document catches touchend before wrapper's handler
+  document.addEventListener('touchend',e=>{
+    if(e.touches.length<2) endPinch();
+  },{passive:true,capture:true});
+  document.addEventListener('touchcancel',()=>endPinch(),{passive:true,capture:true});
+
+  // Auto-reset when going portrait
+  const onPortrait=()=>setTimeout(()=>{ if(!isLandscape()) resetFitCover(); },100);
+  if(screen.orientation) screen.orientation.addEventListener('change',onPortrait);
+  window.addEventListener('orientationchange',onPortrait);
+  document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement) onPortrait(); });
+  window.addEventListener('resize',()=>{ if(!isLandscape()) resetFitCover(); });
+})();
 
 document.addEventListener('keydown',e=>{
   if(!document.getElementById('playerOverlay').classList.contains('active'))return;
@@ -3799,6 +3937,74 @@ function hideNextEpOverlay(){
   clearTimeout(_nextEpCountdownTimer);
   _nextEpCountdownTimer=null;
 }
+
+// ── Next-ep swipe-to-dismiss ────────────────────────────────────────────────
+(function(){
+  let _sx=0,_sy=0,_dx=0,_dy=0,_dragging=false;
+  const DISMISS_THRESHOLD=80; // px in any direction
+
+  function getOverlay(){return document.getElementById('nextEpOverlay');}
+
+  function onTouchStart(e){
+    const ov=getOverlay();
+    if(!ov||!ov.classList.contains('show'))return;
+    const t=e.touches[0];
+    _sx=t.clientX;_sy=t.clientY;_dx=0;_dy=0;_dragging=true;
+    ov.classList.add('swiping');
+  }
+
+  function onTouchMove(e){
+    if(!_dragging)return;
+    const ov=getOverlay();
+    if(!ov)return;
+    e.stopPropagation();
+    const t=e.touches[0];
+    _dx=t.clientX-_sx;
+    _dy=t.clientY-_sy;
+    const dist=Math.sqrt(_dx*_dx+_dy*_dy);
+    const progress=Math.min(dist/DISMISS_THRESHOLD,1);
+    ov.style.transform=`translate(${_dx}px,${_dy}px) scale(${1-progress*0.08})`;
+    ov.style.opacity=String(1-progress*0.6);
+  }
+
+  function onTouchEnd(){
+    if(!_dragging)return;
+    _dragging=false;
+    const ov=getOverlay();
+    if(!ov)return;
+    ov.classList.remove('swiping');
+    const dist=Math.sqrt(_dx*_dx+_dy*_dy);
+    if(dist>=DISMISS_THRESHOLD){
+      // fling out
+      const angle=Math.atan2(_dy,_dx);
+      const flyX=Math.cos(angle)*260;
+      const flyY=Math.sin(angle)*260;
+      ov.style.transition='transform .35s cubic-bezier(.4,0,1,1),opacity .3s ease';
+      ov.style.transform=`translate(${flyX}px,${flyY}px) scale(.85)`;
+      ov.style.opacity='0';
+      setTimeout(()=>{
+        ov.classList.remove('show');
+        ov.style.transform='';
+        ov.style.opacity='';
+        ov.style.transition='';
+        clearTimeout(_nextEpCountdownTimer);
+        _nextEpCountdownTimer=null;
+        _nextEpPrompted=true; // don't re-show this session
+      },340);
+    }else{
+      // snap back
+      ov.style.transition='transform .3s cubic-bezier(.4,0,.2,1),opacity .3s ease';
+      ov.style.transform='';
+      ov.style.opacity='';
+      setTimeout(()=>{ov.style.transition='';},320);
+    }
+  }
+
+  document.addEventListener('touchstart',onTouchStart,{passive:true,capture:true});
+  document.addEventListener('touchmove',onTouchMove,{passive:false,capture:true});
+  document.addEventListener('touchend',onTouchEnd,{passive:true,capture:true});
+  document.addEventListener('touchcancel',onTouchEnd,{passive:true,capture:true});
+})();
 
 function skipContent(){
   if(_skipEnd>0)video.currentTime=_skipEnd;
