@@ -19,8 +19,15 @@
   --radius:12px;--radius-lg:20px;--nav-h:70px;
   --transition:0.3s cubic-bezier(0.4,0,0.2,1);
 }
-html{scroll-behavior:smooth;overflow-x:hidden;touch-action:pan-x pan-y}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden;touch-action:pan-x pan-y}
+html{scroll-behavior:smooth;overflow-x:hidden;touch-action:pan-x pan-y;overscroll-behavior-y:auto}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden;touch-action:pan-x pan-y;overscroll-behavior-y:auto}
+/* Native swipe-down-to-refresh should only work on the plain Dashboard.
+   html.no-pull-refresh is kept in sync with body.modal-open (added whenever
+   the player, detail, search, wishlist, auth, admin or mobile-nav overlays
+   are open) via a MutationObserver near the top of the main <script>. */
+html.no-pull-refresh,
+html.no-pull-refresh body{overscroll-behavior-y:none}
+#playerOverlay{overscroll-behavior:none;touch-action:pan-x pan-y}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--gold);border-radius:99px}
@@ -1722,6 +1729,17 @@ body.blur-bg #home-screen {
 
 <script>
 const API='https://sk-flix-five.vercel.app/api';
+
+// Native swipe-down-to-refresh should only be available on the bare Dashboard.
+// Every overlay/drawer in this app (player, detail, search, wishlist, auth,
+// admin, mobile nav) already toggles body.modal-open when it opens/closes —
+// we just mirror that onto <html> so the CSS overscroll-behavior rule above
+// can block/allow the gesture accordingly, with no need to touch every
+// individual open/close function.
+new MutationObserver(()=>{
+  document.documentElement.classList.toggle('no-pull-refresh', document.body.classList.contains('modal-open'));
+}).observe(document.body,{attributes:true,attributeFilter:['class']});
+
 let state={
   user:null,token:null,heroMovie:null,currentMovie:null,
   playerHls:null,movies:[],series:[],originals:[],allContent:[],
