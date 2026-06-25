@@ -3399,13 +3399,15 @@ let _controlsHovered=false;
 
 function scheduleControlsAutoHide(){
   // While the video is playing (and nothing else needs them on-screen),
-  // controls auto-hide 2 seconds after they were last shown/interacted with.
-  // But NEVER hide while the user is hovering/touching the controls bar.
+  // controls auto-hide after they were last shown/interacted with.
+  // Mouse/pointer devices get 3 s; touch gets 2 s (set by showControls timeout).
+  // NEVER hide while the user is hovering/touching the controls bar.
   clearTimeout(controlsTimeout);
   if(video.paused||video.ended||settingsOpen||_controlsHovered)return;
+  const delay=window.matchMedia('(hover:hover) and (pointer:fine)').matches?3000:2000;
   controlsTimeout=setTimeout(()=>{
     if(!_controlsHovered) wrapper.classList.add('controls-hidden');
-  },2000);
+  },delay);
 }
 
 function closeSettingsPanel(){
@@ -3763,6 +3765,19 @@ document.addEventListener('click',e=>{
   }
 });
 
+// ── Mouse movement shows controls on PC / TV (pointer device) ───────────────
+// On touch-only devices this never fires, so it's safe to add unconditionally.
+// The existing scheduleControlsAutoHide() will re-hide controls 2 s after the
+// last mouse movement, exactly like Netflix / Prime Video.
+let _mouseMoveThrottle=null;
+wrapper.addEventListener('mousemove',()=>{
+  if(!document.getElementById('playerOverlay').classList.contains('active'))return;
+  // Throttle to ~10 fps to avoid spamming showControls on every pixel
+  if(_mouseMoveThrottle)return;
+  _mouseMoveThrottle=setTimeout(()=>{ _mouseMoveThrottle=null; },100);
+  showControls();
+});
+
 // ── Controls bar hover/touch guard ──────────────────────────────────────────
 // While the user's finger or mouse is anywhere inside the controls bar,
 // cancel the auto-hide timer so controls never disappear mid-interaction.
@@ -3784,6 +3799,22 @@ controlsContainer.addEventListener('touchend',()=>{
   _controlsHovered=false;
   scheduleControlsAutoHide();
 },{passive:true});
+
+// ── Top-bar hover guard (PC / TV) ───────────────────────────────────────────
+// Hovering the back button / title bar at the top should also keep controls
+// visible, mirroring the bottom bar's mouseenter/mouseleave guard above.
+const cineTopbar=document.querySelector('#playerOverlay .cine-topbar');
+if(cineTopbar){
+  cineTopbar.addEventListener('mouseenter',()=>{
+    _controlsHovered=true;
+    showControls();
+    clearTimeout(controlsTimeout);
+  });
+  cineTopbar.addEventListener('mouseleave',()=>{
+    _controlsHovered=false;
+    scheduleControlsAutoHide();
+  });
+}
 
 progressArea.addEventListener('mousemove',e=>{
   if(!video.duration||!isFinite(video.duration))return;
