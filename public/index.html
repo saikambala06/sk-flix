@@ -4,6 +4,25 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no"/>
 <title>SkFlip — Stream Everything</title>
+
+<!-- ── PWA / App Install ── -->
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#080810"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="SkFlip"/>
+<meta name="application-name" content="SkFlip"/>
+<meta name="msapplication-TileColor" content="#080810"/>
+<meta name="msapplication-config" content="none"/>
+<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png"/>
+<link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png"/>
+
+<!-- ── Open Graph (for share / install cards) ── -->
+<meta property="og:title" content="SkFlip — Stream Everything"/>
+<meta property="og:description" content="Movies, series and originals all in one place."/>
+<meta property="og:type" content="website"/>
+<meta name="description" content="SkFlip — Stream movies, series and originals anywhere."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet"/>
@@ -1268,6 +1287,132 @@ body.blur-bg #home-screen {
   filter: blur(12px) brightness(0.6);
   transform: scale(1.02);
   transition: all 400ms ease;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ANDROID DYNAMIC VIEWPORT
+   JS sets --dvh on every resize; layout uses it so the hero and
+   full-screen overlays never get clipped by the Android address
+   bar or gesture indicator.  Falls back to 1vh if JS hasn't run.
+   ════════════════════════════════════════════════════════════════ */
+:root { --dvh: 1vh; }
+.hero            { min-height: calc(var(--dvh,1vh) * 100); }
+#playerOverlay   { height:     calc(var(--dvh,1vh) * 100); }
+.admin-overlay   { height:     calc(var(--dvh,1vh) * 100); }
+.detail-overlay-prime { height: calc(var(--dvh,1vh) * 100); }
+.search-overlay  { min-height: calc(var(--dvh,1vh) * 100); }
+.wishlist-overlay{ min-height: calc(var(--dvh,1vh) * 100); }
+
+/* Safe area insets for Android edge-to-edge / gesture-nav mode */
+.navbar {
+  padding-left:  max(clamp(16px,4vw,60px), env(safe-area-inset-left));
+  padding-right: max(clamp(16px,4vw,60px), env(safe-area-inset-right));
+}
+.toast-container { bottom: max(28px, calc(env(safe-area-inset-bottom) + 12px)); }
+.install-popup   { bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); }
+#playerOverlay .controls-container {
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ANDROID TV / GOOGLE TV — 10-foot experience
+   Targets: large touch screen (≥960 px, no fine pointer).
+   Covers Android TV, Fire TV, Chromecast w/ Google TV, etc.
+   ════════════════════════════════════════════════════════════════ */
+@media (min-width:960px) and (hover:none) and (pointer:coarse) {
+  :root { --nav-h:80px; --radius:16px; --radius-lg:26px; }
+
+  /* D-pad / keyboard focus ring — critical for remote navigation */
+  *:focus { outline: none; }
+  *:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 4px;
+    border-radius: 6px;
+    box-shadow: 0 0 0 6px rgba(224,168,48,.22);
+  }
+
+  /* Larger nav & typography */
+  body { font-size: 18px; }
+  .logo { font-size: 2.2rem; }
+  .nav-links a { font-size: 1.05rem; padding: 6px 0; }
+
+  /* Hero */
+  .hero-title  { font-size: clamp(4rem,7vw,7rem); }
+  .hero-desc   { font-size: 1.15rem; max-width: 540px; }
+  .hero-badge  { font-size: .85rem; padding: 7px 18px; }
+  .btn-play,.btn-info,.btn-wishlist { padding:18px 38px; font-size:1.1rem; gap:10px; }
+  .btn-play    { box-shadow: 0 10px 40px rgba(224,168,48,.5); }
+
+  /* Cards — wider + focus interaction */
+  .movie-card   { width: clamp(170px,15vw,230px); }
+  .skeleton-card{ width: clamp(170px,15vw,230px); }
+  .cw-card      { width: clamp(200px,22vw,290px); }
+  .card-below-title { font-size: .85rem; }
+  .movie-card:focus-visible,
+  .movie-card:focus-within {
+    transform: scale(1.08) translateY(-6px);
+    box-shadow: 0 20px 50px rgba(0,0,0,.7), 0 0 0 3px var(--gold);
+    z-index: 10;
+  }
+  .movie-card:focus-visible .card-overlay,
+  .movie-card:focus-within  .card-overlay { opacity: 1; }
+  .movie-card:focus-visible .card-img,
+  .movie-card:focus-within  .card-img    { filter: brightness(.65); }
+
+  /* Row headers */
+  .row-header h2 { font-size: clamp(1.4rem,2.5vw,2rem); }
+
+  /* Nav — always expanded on TV, no hamburger */
+  .hamburger { display: none !important; }
+  .nav-links {
+    position: static !important; transform: none !important;
+    height: auto !important;    width: auto !important;
+    background: none !important; border: none !important;
+    flex-direction: row !important;
+    padding: 0 !important; gap: clamp(1rem,2vw,2.5rem) !important;
+  }
+
+  /* Player — bigger hit targets */
+  #playerOverlay .ctrl-btn        { width:52px; height:52px; font-size:1.25rem; }
+  #playerOverlay .progress-area   { height:32px; }
+  #playerOverlay .progress-bar-bg { height:6px; }
+  #playerOverlay .controls-container { padding:60px 28px 28px; }
+  #playerOverlay .settings-panel  { min-width:300px; }
+  #playerOverlay .settings-item   { padding:14px 20px; }
+  #playerOverlay .settings-item .item-left { font-size:1rem; }
+
+  /* Genre grid */
+  .genre-grid { grid-template-columns: repeat(3,1fr); }
+
+  /* Install popup — put at top on TV (no bottom gesture bar) */
+  .install-popup { bottom:auto; top:90px; }
+
+  /* Scrollbar hidden on TV */
+  ::-webkit-scrollbar { display:none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4K / LARGE-DISPLAY SCALING  (1920 px+, e.g. OLED TVs)
+   ════════════════════════════════════════════════════════════════ */
+@media (min-width:1920px) {
+  :root { --nav-h:90px; }
+  body         { font-size:20px; }
+  .movie-card  { width: clamp(200px,11vw,280px); }
+  .skeleton-card { width: clamp(200px,11vw,280px); }
+  .hero-title  { font-size: clamp(5rem,7vw,9rem); }
+  .row-header h2 { font-size:2rem; }
+  .card-row    { gap:20px; }
+  .row-section { padding-top:48px; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PWA STANDALONE MODE — hide install banners when already
+   running as an installed app (Android WebAPK / iOS Add-to-HS)
+   ════════════════════════════════════════════════════════════════ */
+@media (display-mode:standalone),(display-mode:fullscreen) {
+  .install-popup { display:none !important; }
+  .navbar { padding-top: env(safe-area-inset-top,0px); }
+  body    { padding-top: env(safe-area-inset-top,0px); }
 }
 
 </style>
@@ -5193,6 +5338,107 @@ body.blur-bg #home-screen {
 </style>
 
 <!-- ── Dev Live Reload (localhost only — auto-reloads when index.html / index.js changes) ── -->
+<script>
+// ═══ Android Dynamic Viewport Height ════════════════════════════════════════
+// Keeps --dvh accurate as Android's address bar appears / disappears.
+(function(){
+  function setDvh(){
+    document.documentElement.style.setProperty('--dvh', (window.innerHeight * 0.01) + 'px');
+  }
+  setDvh();
+  window.addEventListener('resize', setDvh, {passive:true});
+  // visualViewport API is more reliable on Android Chrome 61+
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', setDvh, {passive:true});
+  }
+})();
+
+// ═══ TV / Android TV — D-pad Keyboard Navigation ════════════════════════════
+// Arrow keys scroll card rows and move focus between focusable elements.
+(function(){
+  const isTV = window.matchMedia('(min-width:960px) and (hover:none) and (pointer:coarse)').matches;
+  if(!isTV) return;
+
+  // Make cards focusable
+  function makeCardsFocusable(){
+    document.querySelectorAll('.movie-card, .cw-card, .genre-card').forEach(c=>{
+      if(!c.getAttribute('tabindex')) c.setAttribute('tabindex','0');
+    });
+  }
+  makeCardsFocusable();
+  const mo = new MutationObserver(makeCardsFocusable);
+  mo.observe(document.getElementById('mainContent') || document.body, {childList:true,subtree:true});
+
+  // Arrow-key row scrolling + focus movement
+  document.addEventListener('keydown', e=>{
+    const focused = document.activeElement;
+
+    // LEFT / RIGHT inside a card-row — move to sibling card
+    if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+      const card = focused && focused.closest('.movie-card, .cw-card');
+      if(card){
+        e.preventDefault();
+        const sibling = e.key==='ArrowRight' ? card.nextElementSibling : card.previousElementSibling;
+        if(sibling){
+          sibling.focus();
+          sibling.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+        }
+      }
+    }
+
+    // UP / DOWN — move between card rows
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      const row = focused && focused.closest('.card-row');
+      if(row){
+        e.preventDefault();
+        const rows = Array.from(document.querySelectorAll('.card-row'));
+        const idx  = rows.indexOf(row);
+        const targetRow = e.key==='ArrowDown' ? rows[idx+1] : rows[idx-1];
+        if(targetRow){
+          const firstCard = targetRow.querySelector('.movie-card, .cw-card');
+          if(firstCard){ firstCard.focus(); firstCard.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'}); }
+        }
+      }
+    }
+
+    // ENTER on a card = click it
+    if(e.key === 'Enter'){
+      const card = focused && focused.closest('.movie-card, .cw-card');
+      if(card) card.click();
+    }
+
+    // BACK / ESCAPE — close open overlays
+    if(e.key === 'Escape' || e.key === 'GoBack'){
+      const overlays = [
+        {id:'playerOverlay',  fn:()=>{ if(typeof closeCinePlayer==='function') closeCinePlayer(); }},
+        {id:'detailOverlay',  fn:()=>{ if(typeof closeDetailOverlay==='function') closeDetailOverlay(); }},
+        {id:'searchOverlay',  fn:()=>{ if(typeof closeSearch==='function') closeSearch(); }},
+        {id:'adminOverlay',   fn:()=>{ if(typeof closeAdmin==='function') closeAdmin(); }},
+        {id:'authOverlay',    fn:()=>{ if(typeof closeAuth==='function') closeAuth(); }},
+        {id:'wishlistOverlay',fn:()=>{ if(typeof closeWishlist==='function') closeWishlist(); }},
+      ];
+      for(const o of overlays){
+        const el = document.getElementById(o.id);
+        if(el && el.classList.contains('active')){ o.fn(); break; }
+      }
+    }
+  }, {passive:false});
+})();
+
+// ═══ Service Worker Registration ════════════════════════════════════════════
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('/sw.js', {scope:'/'})
+      .then(reg=>{
+        console.log('[SkFlip SW] registered, scope:', reg.scope);
+        // Check for updates every 60 s
+        setInterval(()=>reg.update(), 60000);
+      })
+      .catch(err=>console.warn('[SkFlip SW] registration failed:', err));
+  });
+}
+</script>
+
 <script>
 (function(){
   if(location.hostname!=='localhost'&&location.hostname!=='127.0.0.1')return;
