@@ -1134,10 +1134,10 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 
 .loading-screen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
 .loading-screen.hidden{opacity:0;pointer-events:none}
-.loading-logo{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;letter-spacing:4px;margin-bottom:24px}
+.loading-logo{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;letter-spacing:4px;margin-bottom:28px;animation:logoBreath 2.4s ease-in-out infinite}
 .loading-logo span{color:var(--gold)}
-.loading-bar{width:180px;height:3px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
-.loading-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;animation:loadBar 1.8s ease-in-out infinite}
+.loading-bar{width:180px;height:3px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;position:relative}
+.loading-bar-fill{position:absolute;inset:0;border-radius:99px;background:linear-gradient(90deg,transparent 0%,var(--gold) 40%,var(--gold2) 60%,transparent 100%);background-size:200% 100%;animation:loadBar 1.6s linear infinite;will-change:background-position}
 
 .user-menu{display:none;position:absolute;right:0;top:48px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:6px;min-width:210px;z-index:200;box-shadow:0 12px 40px rgba(0,0,0,.6)}
 .user-menu.show{display:block}
@@ -1169,7 +1169,8 @@ th{color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-
 @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 @keyframes toastSlideIn{from{opacity:0;transform:translateX(60px) scale(.92)}to{opacity:1;transform:translateX(0) scale(1)}}
 @keyframes toastProg{from{width:100%}to{width:0%}}
-@keyframes loadBar{0%{transform:translateX(-100%)}60%{transform:translateX(100%)}100%{transform:translateX(100%)}}
+@keyframes loadBar{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@keyframes logoBreath{0%,100%{opacity:1}50%{opacity:.6}}
 
 @media(max-width:900px){.hero-gradient{background:linear-gradient(to right,rgba(8,8,16,.97) 0%,rgba(8,8,16,.7) 100%)}}
 @media(max-width:768px){
