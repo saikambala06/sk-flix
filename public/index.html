@@ -508,7 +508,7 @@ img{display:block;max-width:100%}
   display:grid;grid-template-columns:auto minmax(0,1fr) auto;
   align-items:center;gap:14px;padding:18px 24px 72px;
   background:linear-gradient(to bottom,rgba(0,0,0,.82),rgba(0,0,0,.42) 52%,transparent);
-  transition:opacity .3s ease,transform .3s ease;pointer-events:none
+  transition:opacity .25s cubic-bezier(0.4,0,0.2,1),transform .25s cubic-bezier(0.4,0,0.2,1);pointer-events:none
 }
 #playerOverlay .player-wrapper.controls-hidden .cine-topbar{
   opacity:0;transform:translateY(-10px)
@@ -743,10 +743,10 @@ img{display:block;max-width:100%}
   position:absolute;bottom:0;left:0;right:0;z-index:6;
   background:linear-gradient(to top,rgba(0,0,0,.93),rgba(0,0,0,.62) 60%,transparent);
   padding:44px 18px max(14px,env(safe-area-inset-bottom));
-  opacity:1;transition:opacity .35s,transform .35s
+  opacity:1;transition:opacity .25s cubic-bezier(0.4,0,0.2,1),transform .25s cubic-bezier(0.4,0,0.2,1)
 }
 #playerOverlay .player-wrapper.controls-hidden .controls-container{
-  opacity:0;transform:translateY(10px);pointer-events:none
+  opacity:0;transform:translateY(14px);pointer-events:none
 }
 #playerOverlay .progress-area{
   position:relative;width:100%;height:22px;display:flex;align-items:center;
@@ -4209,6 +4209,61 @@ document.addEventListener('keydown',e=>{
 });
 
 wrapper.addEventListener('contextmenu',e=>e.preventDefault());
+
+// ── Mouse-move → show controls + cursor auto-hide ──────────────────────────
+// Shows controls on any mouse movement inside the player.
+// Near the bottom 18% of the player the controls are pinned visible so
+// the user can move towards the bar without it disappearing under them.
+// The cursor is hidden after 2.5 s of mouse idle (standard cinema UX).
+let _cursorHideTimer=null;
+let _lastMouseY=0;
+
+function _resetCursorHide(){
+  wrapper.style.cursor='';
+  clearTimeout(_cursorHideTimer);
+  _cursorHideTimer=setTimeout(()=>{
+    // Only hide cursor when controls are hidden and video is playing
+    if(!video.paused&&!video.ended&&wrapper.classList.contains('controls-hidden')){
+      wrapper.style.cursor='none';
+    }
+  },2500);
+}
+
+wrapper.addEventListener('mousemove',e=>{
+  // 1. Always restore cursor on movement
+  _resetCursorHide();
+
+  // 2. Show controls on every movement
+  showControls();
+
+  // 3. Proximity pin: if mouse is in bottom 22% of the player, keep controls
+  //    visible even after the auto-hide timer fires (prevents controls
+  //    vanishing as the user moves the pointer towards the bar).
+  const rect=wrapper.getBoundingClientRect();
+  const fromBottom=rect.bottom-e.clientY;
+  const proximityZone=rect.height*0.22;
+  _lastMouseY=e.clientY;
+
+  if(fromBottom<=proximityZone){
+    // Pointer near control bar — cancel auto-hide while in zone
+    clearTimeout(controlsTimeout);
+    _controlsHovered=true;
+  }else{
+    // Pointer moved away from control area — let normal timer run
+    if(_controlsHovered&&!controlsContainer.matches(':hover')){
+      _controlsHovered=false;
+      scheduleControlsAutoHide();
+    }
+  }
+});
+
+// Restore cursor when mouse leaves player
+wrapper.addEventListener('mouseleave',()=>{
+  wrapper.style.cursor='';
+  clearTimeout(_cursorHideTimer);
+  _controlsHovered=false;
+  scheduleControlsAutoHide();
+});
 
 function setNextEpisode(epData){
   _nextEpData=epData;
