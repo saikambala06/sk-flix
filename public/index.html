@@ -1270,6 +1270,121 @@ body.blur-bg #home-screen {
   transition: all 400ms ease;
 }
 
+
+/* ════════════════════════════════════════════════════════════════════
+   PRO MULTI-DEVICE UPGRADE
+   Everything below refines (never replaces) the rules above so the
+   existing look/UX stays identical — only the sizing across screens
+   and the keyboard/remote focus handling are improved.
+
+   1. Visible focus for keyboard + TV remote (D-pad) navigation
+   2. A "10-foot UI" pass for Smart TV browsers (Tizen/webOS/Android TV/Fire TV)
+   3. Progressive up-scaling for laptops, desktop monitors and big-screen TVs
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- 1. Focus visibility -----------------------------------------------
+   Phones/tablets use touch, desktop uses a mouse, but a keyboard or a TV
+   remote's D-pad *moves focus* instead — so every interactive element needs
+   a focus state that's at least as visible as the hover state it already
+   has. This never changes layout, only what's visible when something is
+   focused instead of hovered/clicked. */
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible,
+input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:3px solid var(--gold);outline-offset:3px;border-radius:6px
+}
+.btn-icon:focus-visible,.user-avatar:focus-visible,.card-play-btn:focus-visible,
+.card-wish-btn:focus-visible,.cw-play-btn:focus-visible,.cw-act-btn:focus-visible,
+.search-close:focus-visible,.hamburger:focus-visible{outline-offset:2px;border-radius:50%}
+.btn-signup:focus-visible,.btn-play:focus-visible,.btn-wishlist:focus-visible,
+.btn-info:focus-visible,#playerOverlay .big-play:focus-visible{outline-offset:4px}
+
+/* The custom <div tabindex="0"> tiles (cards, genre tiles, continue-watching
+   thumbs, wishlist cards) mirror their own :hover look on focus, so a
+   remote/keyboard user always sees which title is currently selected —
+   exactly what already happens for a mouse user today. */
+.movie-card:focus-visible{outline:none;transform:scale(1.07) translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 0 3px var(--gold),0 0 30px rgba(224,168,48,.2);z-index:10}
+.movie-card:focus-visible .card-overlay{opacity:1}
+.movie-card:focus-visible .card-img{filter:brightness(.65)}
+.movie-card:focus-visible .card-wish-btn{opacity:1;transform:translateX(-50%) translateY(0)}
+.genre-card:focus-visible{outline:none;transform:scale(1.04);box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 0 3px var(--gold)}
+.genre-card:focus-visible::before{background:rgba(0,0,0,.15)}
+.wishlist-card:focus-visible{outline:none;transform:scale(1.05) translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.5),0 0 0 3px var(--gold)}
+.cw-thumb:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:var(--radius)}
+.cw-card:focus-within .cw-thumb img{filter:brightness(.65)}
+.cw-card:focus-within .cw-overlay{opacity:1}
+.nav-links a:focus-visible{color:var(--text);outline-offset:6px;border-radius:4px}
+.nav-links a:focus-visible::after{transform:scaleX(1)}
+
+/* The volume slider and progress scrubber tooltip/thumb only reveal on
+   mouse :hover today — :focus-within mirrors that so they're reachable
+   without a mouse at all (keyboard tabbing or a remote). */
+#playerOverlay .ctrl-btn:focus-visible{outline-offset:1px;background:rgba(255,255,255,.14);color:#fff}
+#playerOverlay .volume-group:focus-within .volume-slider-wrap{width:82px}
+#playerOverlay .progress-area:focus-within .progress-bar-bg{height:7px}
+#playerOverlay .progress-area:focus-within .progress-thumb{transform:translate(-50%,-50%) scale(1)}
+#playerOverlay .settings-item:focus-visible,#playerOverlay .sub-option:focus-visible{background:rgba(255,255,255,.08);outline-offset:0}
+
+/* ---- 2. Smart TV heuristic ----------------------------------------------
+   TV browsers (Tizen, webOS, Android TV, Fire TV) almost always report
+   hover:none + pointer:coarse, same as a phone — but on a screen watched
+   from across a room instead of held in a hand. Catching that combination
+   (and excluding small/handheld widths) lets touch targets and text grow
+   for 10-foot viewing without changing anything on phones or tablets. */
+@media (hover:none) and (pointer:coarse) and (min-width:1024px){
+  html{font-size:17px}
+  .nav-links a{padding:6px 2px}
+  .btn-icon{padding:11px}
+  .btn-play,.btn-wishlist,.btn-info{padding:16px 32px}
+  #playerOverlay .ctrl-btn{width:46px;height:46px;font-size:1.1rem}
+  #playerOverlay .volume-group .volume-slider-wrap{width:82px}
+  .movie-card{width:clamp(160px,16vw,225px)}
+}
+
+/* ---- 3. Exactly three movie cards per row on phones --------------------
+   Below, on phones the row used a fixed 130px card (the clamp() min on the
+   base rule), so only ~2.3 cards were visible before the row had to be
+   scrolled. .row-section's side padding is a flat 16px and .card-row's gap
+   is 14px throughout this whole range (see the max-width:900px rule
+   earlier), so card width = (100vw - both 16px paddings - both 14px gaps)
+   / 3 fits exactly 3, full-width, edge to edge — same horizontal-scroll
+   row underneath for the 4th title onward. */
+@media (max-width:600px){
+  .movie-card{width:clamp(86px,calc((100vw - 60px) / 3),200px)}
+}
+
+/* ---- 4. Progressive scaling for laptops, desktop monitors & big TVs ----
+   Almost all type and spacing in this file is set in rem/clamp(), so
+   raising the root font-size is enough to scale the whole UI proportionally
+   as the screen grows — the same layout, just sized right for the distance
+   it's actually viewed from. Card widths and the nav bar use px, so those
+   get an explicit bump alongside it. */
+@media (min-width:1440px){
+  html{font-size:17px}
+  :root{--nav-h:76px}
+  .movie-card{width:clamp(140px,14vw,215px)}
+  .cw-card{width:clamp(170px,18vw,260px)}
+  .genre-card{height:115px}
+  .card-play-btn{width:44px;height:44px}
+  .hero-desc{max-width:540px}
+}
+@media (min-width:1920px){
+  html{font-size:18.5px}
+  :root{--nav-h:84px}
+  .movie-card{width:clamp(155px,12vw,235px)}
+  .cw-card{width:clamp(185px,16vw,280px)}
+  .genre-card{height:130px}
+  .card-play-btn{width:48px;height:48px}
+  .hero-desc{max-width:620px}
+}
+@media (min-width:2560px){
+  html{font-size:20px}
+  :root{--nav-h:92px}
+  .movie-card{width:clamp(170px,10vw,255px)}
+  .cw-card{width:clamp(200px,14vw,300px)}
+  .genre-card{height:145px}
+  .card-play-btn{width:52px;height:52px}
+  .hero-desc{max-width:700px}
+}
 </style>
 </head>
 <body>
@@ -2204,6 +2319,7 @@ function openCardPlayer(id){
 
 function createCard(item){
   const card=document.createElement('div');card.className='movie-card';
+  card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',item.title||'Open title');
   const typeClass=item.type==='original'?'original':item.type==='series'?'series':'movie';
   const typeLabel=item.type==='original'?'ORIGINAL':item.type==='series'?'SERIES':'MOVIE';
   const imgSrc=item.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');
@@ -2501,6 +2617,7 @@ function renderGenreGrid(){
   GENRES.forEach(g=>{
     const count=state.allContent.filter(m=>{const mg=m._genres_normalized||normalizeGenres(m.genres);return mg.some(gn=>gn.toLowerCase()===g.name.toLowerCase());}).length;
     const card=document.createElement('div');card.className=`genre-card ${g.cls}`;
+    card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',g.name);
     card.innerHTML=`<span>${g.icon} ${g.name}</span>${count?`<span class="genre-count">${count}</span>`:''}`;
     card.addEventListener('click',()=>filterByGenre(g.name));grid.appendChild(card);
   });
@@ -2550,7 +2667,7 @@ function runSearch(q){
     res.innerHTML=`<div class="search-hint"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg>No results for "<strong>${q.trim()}</strong>"</div>`;return;
   }
   let html='';
-  if(matchedGenres.length>0){html+=`<div class="search-category-label">Genres</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">`;matchedGenres.forEach(g=>{html+=`<div class="genre-card ${g.cls}" style="height:48px;border-radius:8px;flex-shrink:0;width:auto;padding:0 20px" onclick="closeSearch();filterByGenre('${g.name}')"><span style="font-size:1rem">${g.icon} ${g.name}</span></div>`;});html+=`</div>`;}
+  if(matchedGenres.length>0){html+=`<div class="search-category-label">Genres</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">`;matchedGenres.forEach(g=>{html+=`<div class="genre-card ${g.cls}" style="height:48px;border-radius:8px;flex-shrink:0;width:auto;padding:0 20px" tabindex="0" role="button" aria-label="${g.name}" onclick="closeSearch();filterByGenre('${g.name}')"><span style="font-size:1rem">${g.icon} ${g.name}</span></div>`;});html+=`</div>`;}
   if(titleMatches.length>0){html+=`<div class="search-category-label">Titles (${titleMatches.length})</div><div class="search-results-grid">`;titleMatches.forEach(m=>html+=createCardHTML(m));html+=`</div>`;}
   if(extraByGenre.length>0){html+=`<div class="search-category-label">Matching Genres (${extraByGenre.length})</div><div class="search-results-grid">`;extraByGenre.forEach(m=>html+=createCardHTML(m));html+=`</div>`;}
   if(extraByDesc.length>0){html+=`<div class="search-category-label">Related (${extraByDesc.length})</div><div class="search-results-grid">`;extraByDesc.forEach(m=>html+=createCardHTML(m));html+=`</div>`;}
@@ -2572,7 +2689,7 @@ function createCardHTML(item){
   const typeLabel=item.type==='original'?'ORIGINAL':item.type==='series'?'SERIES':'MOVIE';
   const imgSrc=item.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');
   const genres=item._genres_normalized||normalizeGenres(item.genres);
-  return `<div class="movie-card search-card-item" data-movie-id="${item._id}" tabindex="0" style="cursor:pointer">
+  return `<div class="movie-card search-card-item" data-movie-id="${item._id}" tabindex="0" role="button" aria-label="${item.title||'Open title'}" style="cursor:pointer">
     <div class="card-badge ${typeClass}">${typeLabel}</div>
     ${item.rating?`<div class="card-rating">⭐ ${item.rating}</div>`:''}
     ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${item.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center>${this.alt}</div>'"/>`
@@ -2992,7 +3109,7 @@ function openWishlist(){
   inner.innerHTML=`<div class="wishlist-header"><div><h1>My <span>Wishlist</span></h1><div class="wishlist-count">${wishMovies.length} title${wishMovies.length!==1?'s':''}</div>${syncBadge}</div><button class="wishlist-close-btn" onclick="closeWishlist()">← Back</button></div><div class="wishlist-grid" id="wishlistGrid"></div>`;
   const grid=document.getElementById('wishlistGrid');
   if(wishMovies.length===0){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;padding:60px 20px"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>Your wishlist is empty. Browse movies and tap the heart icon to save them here.</span></div>`;}
-  else{wishMovies.forEach(movie=>{const card=document.createElement('div');card.className='wishlist-card';const imgSrc=movie.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');const genres=movie._genres_normalized||normalizeGenres(movie.genres);
+  else{wishMovies.forEach(movie=>{const card=document.createElement('div');card.className='wishlist-card';card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',movie.title||'Open title');const imgSrc=movie.posterUrl||'';const hasImg=imgSrc&&imgSrc.startsWith('http');const genres=movie._genres_normalized||normalizeGenres(movie.genres);
     card.innerHTML=`<button class="wishlist-remove" onclick="event.stopPropagation();removeWishlistCard('${movie._id}',this)" title="Remove">✕</button>
       ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${movie.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center>${this.alt}</div>'"/>`
       :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center">${movie.title}</div>`}
@@ -4118,7 +4235,7 @@ function renderContinueWatching(){
     const typeClass=item.type==='original'?'original':item.type==='series'?'series':'movie';
     const typeLabel=item.type==='original'?'ORIGINAL':item.type==='series'?'SERIES':'MOVIE';
     return `<div class="cw-card">
-      <div class="cw-thumb" onclick="openContinueWatching('${item.id}')">
+      <div class="cw-thumb" tabindex="0" role="button" aria-label="Resume ${item.title}" onclick="openContinueWatching('${item.id}')">
         ${hasImg?`<img src="${imgSrc}" alt="${item.title}" loading="lazy" onerror="this.style.display='none'"/>`:`<div class="cw-no-img">${item.title}</div>`}
         <div class="cw-overlay">
           <div class="cw-play-btn">
@@ -5091,6 +5208,23 @@ document.querySelectorAll('#navLinks a').forEach(a=>{
     if(page) navTo(page);
   });
 });
+
+// ═══ Remote/keyboard activation for custom tiles ═══
+// Movie cards, genre tiles, continue-watching thumbnails and wishlist cards are plain
+// <div tabindex="0"> elements, not native <button>/<a>, so the browser doesn't activate
+// them on Enter/Space by itself. TV remotes and keyboards both move focus the same way
+// Tab does and then "press" with Enter (or Space) — this delegated listener gives these
+// custom tiles that same native-feeling behavior across mobile, desktop and TV browsers.
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  const tag=e.target.tagName;
+  if(tag==='BUTTON'||tag==='A'||tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+  const el=e.target.closest('.movie-card,.genre-card,.cw-thumb,.wishlist-card');
+  if(!el)return;
+  e.preventDefault();
+  el.click();
+});
+
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape') return;
   // Close only the topmost open overlay, one at a time
