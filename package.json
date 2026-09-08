@@ -1,9 +1,17 @@
 {
-  "name": "skflip-backend",
-  "version": "1.0.0",
-  "description": "SkFlip Vercel Backend",
+  "name": "skflix",
+  "version": "2.0.0",
+  "private": true,
+  "description": "SkFlip — streaming platform with an authenticated admin studio, HLS player and PWA client.",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node api/index.js"
+    "start": "node api/index.js",
+    "dev": "node --watch api/index.js",
+    "seed": "node scripts/seed.js",
+    "check": "node -e \"require('./api/index.js'); console.log('API loaded without errors')\""
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

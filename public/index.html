@@ -4,11 +4,40 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no"/>
 <title>SkFlip — Stream Everything</title>
+<meta name="description" content="Stream movies, series and originals on SkFlip. Pick up where you left off on any device, build a watchlist, and watch in up to 4K."/>
+<meta name="theme-color" content="#080810"/>
+<meta name="color-scheme" content="dark"/>
+<link rel="canonical" href="https://sk-flix-five.vercel.app/"/>
+
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="SkFlip"/>
+<meta property="og:title" content="SkFlip — Stream Everything"/>
+<meta property="og:description" content="Movies, series and originals. Pick up where you left off on any device."/>
+<meta property="og:image" content="/og-image.svg"/>
+<meta property="og:url" content="https://sk-flix-five.vercel.app/"/>
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="SkFlip — Stream Everything"/>
+<meta name="twitter:description" content="Movies, series and originals. Pick up where you left off on any device."/>
+<meta name="twitter:image" content="/og-image.svg"/>
+
+<link rel="manifest" href="/manifest.json"/>
+<link rel="icon" href="/icon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="SkFlip"/>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"SkFlip","description":"Stream movies, series and originals.","potentialAction":{"@type":"SearchAction","target":"https://sk-flix-five.vercel.app/?q={search_term_string}","query-input":"required name=search_term_string"}}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin/>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -1551,6 +1580,113 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   .card-play-btn{width:52px;height:52px}
   .hero-desc{max-width:700px}
 }
+/* ── Poster fallbacks ───────────────────────────────────────────────────
+   Replaces the old inline-style onerror handler, which rebuilt the element
+   from a string containing the (unescaped) title. */
+.card-img-fallback,
+.card-img-failed{
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:10px;
+  font-size:.75rem;font-weight:500;line-height:1.35;color:var(--muted);
+  background:linear-gradient(150deg,var(--bg3),var(--surface));
+}
+.card-img-failed::after{content:'Artwork unavailable';}
+.prime-mlt-img.card-img-failed{width:110px;height:155px;}
+
+/* ── Accessibility floor ────────────────────────────────────────────────── */
+
+/* Keyboard users could not see where they were: the reset at the top of the
+   file kills the default outline and nothing replaced it. */
+:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:2px;
+  border-radius:4px;
+}
+/* Pointer users keep a clean look. */
+:focus:not(:focus-visible){outline:none;}
+
+.skip-link{
+  position:absolute;left:12px;top:-60px;z-index:10000;
+  background:var(--gold);color:#0b0b14;font-weight:600;
+  padding:10px 16px;border-radius:8px;text-decoration:none;
+  transition:top .18s ease;
+}
+.skip-link:focus{top:12px;}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+}
+
+/* Honour the OS "reduce motion" setting. The loading screen alone runs
+   several infinite animations. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+  .ls-orb,.ls-dot{display:none;}
+}
+
+/* ── Ratings and reviews ────────────────────────────────────────────────── */
+.reviews-block{margin-top:28px;padding-top:22px;border-top:1px solid var(--border);}
+.reviews-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+.reviews-head h3{font-size:1.05rem;font-weight:600;letter-spacing:.2px;}
+.reviews-score{display:flex;align-items:baseline;gap:8px;}
+.reviews-score-value{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;line-height:1;color:var(--gold);}
+.reviews-score-meta{font-size:.8rem;color:var(--muted);}
+
+.stars{display:inline-flex;gap:3px;}
+.star-btn{
+  background:none;border:none;padding:2px;cursor:pointer;line-height:0;
+  color:rgba(255,255,255,.22);transition:color .15s ease,transform .12s ease;
+}
+.star-btn svg{width:26px;height:26px;display:block;}
+.star-btn.on{color:var(--gold);}
+.star-btn:hover{transform:scale(1.12);}
+.stars.readonly .star-btn{cursor:default;pointer-events:none;}
+.stars.small .star-btn svg{width:15px;height:15px;}
+
+.review-form{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;}
+.review-form-label{font-size:.85rem;color:var(--muted);margin-bottom:10px;}
+.review-input{
+  width:100%;background:var(--bg);color:var(--text);
+  border:1px solid var(--border);border-radius:10px;
+  padding:11px 13px;font-family:'DM Sans',sans-serif;font-size:.9rem;
+  resize:vertical;min-height:74px;margin-top:12px;
+}
+.review-input:focus{border-color:rgba(224,168,48,.5);outline:none;}
+.review-form-actions{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap;}
+.btn-review{
+  background:var(--gold);color:#0b0b14;border:none;border-radius:9px;
+  padding:9px 20px;font-family:'DM Sans',sans-serif;font-size:.86rem;
+  font-weight:600;cursor:pointer;transition:background .18s ease;
+}
+.btn-review:hover:not(:disabled){background:var(--gold2);}
+.btn-review:disabled{opacity:.5;cursor:not-allowed;}
+.btn-review-ghost{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  border-radius:9px;padding:9px 16px;font-family:'DM Sans',sans-serif;
+  font-size:.86rem;cursor:pointer;
+}
+.btn-review-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
+
+.review-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.review-item:last-child{border-bottom:none;}
+.review-avatar{
+  flex:0 0 36px;width:36px;height:36px;border-radius:50%;
+  background:var(--surface);display:flex;align-items:center;justify-content:center;
+  font-weight:600;font-size:.9rem;color:var(--gold);
+}
+.review-body{flex:1;min-width:0;}
+.review-meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:5px;}
+.review-name{font-weight:600;font-size:.88rem;}
+.review-date{font-size:.76rem;color:var(--muted);}
+.review-text{font-size:.88rem;color:rgba(240,240,248,.8);line-height:1.6;word-break:break-word;}
+.reviews-empty{color:var(--muted);font-size:.88rem;padding:16px 0;}
+
 </style>
 </head>
 <body>
@@ -1590,6 +1726,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   }
 })();
 </script>
+
+<a class="skip-link" href="#mainContent">Skip to content</a>
 
 <div class="toast-container" id="toastContainer"></div>
 
@@ -2040,7 +2178,10 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 </div>
 
 <script>
-const API='https://sk-flix-five.vercel.app/api';
+// Same-origin by default: works on localhost, preview builds, and any custom
+// domain without a code change. Override with window.SKFLIP_API_URL if the API
+// ever moves to its own host.
+const API = (window.SKFLIP_API_URL || '') + '/api';
 
 // Native swipe-down-to-refresh should only be available on the bare Dashboard.
 // Every overlay/drawer in this app (player, detail, search, wishlist, auth,
@@ -2092,6 +2233,25 @@ const GENRES=[
     }
   }).observe(document.body,{attributes:true,attributeFilter:['class']});
 })();
+
+// Escape anything interpolated into innerHTML. Titles and descriptions are
+// admin-entered and reviews are user-entered, so neither can be trusted raw.
+function esc(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]
+  ));
+}
+// For values landing inside a JS string in an inline handler.
+function escJs(value){
+  return String(value ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+    .replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/</g,'\\x3C');
+}
+// Only http(s) and root-relative URLs reach src/href, so a javascript: or
+// data: URL saved on a title cannot execute.
+function safeSrc(url){
+  const s = String(url ?? '').trim();
+  return (/^https?:\/\//i.test(s) || s.startsWith('/')) ? s : '';
+}
 
 function normalizeGenres(genres){
   if(!genres)return[];
@@ -2406,7 +2566,7 @@ async function handleResetPassword(){
   const pwd=document.getElementById('newPassword').value;
   const confirmPwd=document.getElementById('confirmNewPassword').value;
   if(!code||!pwd||!confirmPwd){showAuthError('Please fill in all fields.');return;}
-  if(pwd.length<6){showAuthError('Password must be at least 6 characters.');return;}
+  if(pwd.length<8){showAuthError('Use at least 8 characters for your password.');return;}
   if(pwd!==confirmPwd){showAuthError('Passwords do not match.');return;}
   const btn=document.getElementById('btnResetPassword');
   btn.disabled=true;btn.textContent='Resetting…';
@@ -2440,7 +2600,7 @@ async function handleLogin(){
 async function handleSignup(){
   const name=document.getElementById('signupName').value.trim();const email=document.getElementById('signupEmail').value.trim();const pwd=document.getElementById('signupPassword').value;
   if(!name||!email||!pwd){showAuthError('Please fill in all fields.');return;}
-  if(pwd.length<6){showAuthError('Password must be at least 6 characters.');return;}
+  if(pwd.length<8){showAuthError('Use at least 8 characters for your password.');return;}
   const btn=document.getElementById('btnSignup');
   btn.disabled=true;btn.textContent='Creating account…';
   try{
@@ -2526,8 +2686,8 @@ function createCard(item){
     <div class="card-badge ${typeClass}">${typeLabel}</div>
     ${item.rating?`<div class="card-rating">⭐ ${item.rating}</div>`:''}
     <button class="card-wish-btn ${inW?'wishlisted':''}" data-movie-id="${item._id}" onclick="event.stopPropagation();toggleWishlist('${item._id}')">${HEART_SVG}</button>
-    ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${item.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);padding:8px;text-align:center>${this.alt}</div>'"/>`
-    :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);padding:8px;text-align:center">${item.title}</div>`}
+    ${hasImg?`<img class="card-img" src="${esc(imgSrc)}" alt="${esc(item.title)}" loading="lazy" decoding="async" onerror="this.classList.add('card-img-failed');this.removeAttribute('src')"/>`
+    :`<div class="card-img card-img-fallback">${esc(item.title)}</div>`}
     <div class="card-overlay">
       <div class="card-play-btn" onclick="event.stopPropagation();openCardPlayer('${item._id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
       <div class="card-year">${item.releaseYear||''}${genreTag?' · '+genreTag:''}</div>
@@ -2889,11 +3049,11 @@ function createCardHTML(item){
   return `<div class="movie-card search-card-item" data-movie-id="${item._id}" tabindex="0" role="button" aria-label="${item.title||'Open title'}" style="cursor:pointer">
     <div class="card-badge ${typeClass}">${typeLabel}</div>
     ${item.rating?`<div class="card-rating">⭐ ${item.rating}</div>`:''}
-    ${hasImg?`<img class="card-img" src="${imgSrc}" alt="${item.title}" loading="lazy" onerror="this.outerHTML='<div class=card-img style=display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center>${this.alt}</div>'"/>`
-    :`<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);padding:6px;text-align:center">${item.title}</div>`}
+    ${hasImg?`<img class="card-img" src="${esc(imgSrc)}" alt="${esc(item.title)}" loading="lazy" decoding="async" onerror="this.classList.add('card-img-failed');this.removeAttribute('src')"/>`
+    :`<div class="card-img card-img-fallback">${esc(item.title)}</div>`}
     <div class="card-overlay">
       <div class="card-play-btn" onclick="event.stopPropagation();_rawClose('search');openCardPlayer('${item._id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-      <div class="card-title">${item.title}</div>
+      <div class="card-title">${esc(item.title)}</div>
       <div class="card-year">${item.releaseYear||''}${genres[0]?' · '+genres[0]:''}</div>
     </div></div>`;
 }
@@ -3017,6 +3177,14 @@ ${(()=>{
       </div>`:`
       `}
 
+      <div class="reviews-block" id="reviewsBlock">
+        <div class="reviews-head">
+          <h3>Ratings and reviews</h3>
+          <div class="reviews-score" id="reviewsScore"></div>
+        </div>
+        <div id="reviewsBody"><div class="reviews-empty">Loading reviews…</div></div>
+      </div>
+
       <div class="prime-bottom-tabs" style="border-bottom:none;margin-bottom:0;">
         <button class="prime-bottom-tab active" id="mltTab" style="pointer-events:none;cursor:default;">More Like This</button>
       </div>
@@ -3047,6 +3215,8 @@ ${(()=>{
   } else {
     _navPush('detail');
   }
+
+  hydrateDetailExtras(movie);
 }
 
 function playFirstEpisode(){
@@ -3200,8 +3370,8 @@ function buildMovieDetails(movie){
   const subs=Array.isArray(movie.subtitleLanguages)?movie.subtitleLanguages.filter(Boolean):[];
   const row=(label,val)=>`<div><div style="font-size:.78rem;color:var(--muted);font-weight:600;letter-spacing:.5px;margin-bottom:4px">${label}</div><div style="font-size:.88rem;color:rgba(240,240,248,.85);line-height:1.6">${val}</div></div>`;
   return `<div style="display:flex;flex-direction:column;gap:12px;padding:8px 0">
-    ${movie.description?row('SYNOPSIS',`<span style="color:rgba(240,240,248,.75)">${movie.description}</span>`):''}
-    ${genres.length?row('GENRES',genres.join(', ')):''}
+    ${movie.description?row('Synopsis',`<span style="color:rgba(240,240,248,.75)">${esc(movie.description)}</span>`):''}
+    ${genres.length?row('Genres',esc(genres.join(', '))):''}
     ${movie.releaseYear?row('RELEASE YEAR',movie.releaseYear):''}
     ${movie.duration?row('DURATION',Math.floor(movie.duration/60)+'h '+(movie.duration%60)+'m'):''}
     ${movie.rating?row('RATING','⭐ '+movie.rating+' / 10'):''}
@@ -3265,13 +3435,20 @@ function buildMoreLikeThis(movie){
     const typeClass=m.type==='original'?'original':m.type==='series'?'series':'movie';
     const typeLabel=m.type==='original'?'ORIGINAL':m.type==='series'?'SERIES':'MOVIE';
     return `<div class="prime-mlt-card" onclick="openDetail(state.allContent.find(x=>x._id==='${m._id}'))">
-      ${hasImg?`<img class="prime-mlt-img" src="${imgSrc}" alt="${m.title}" loading="lazy" onerror="this.outerHTML='<div class=prime-mlt-no-img>${m.title}</div>'"/>`:`<div class="prime-mlt-no-img">${m.title}</div>`}
+      ${hasImg?`<img class="prime-mlt-img" src="${esc(imgSrc)}" alt="${esc(m.title)}" loading="lazy" decoding="async" onerror="this.classList.add('card-img-failed');this.removeAttribute('src')"/>`:`<div class="prime-mlt-no-img">${esc(m.title)}</div>`}
       <div class="prime-mlt-label">
         <span class="prime-mlt-badge ${typeClass}">${typeLabel}</span>
-        ${m.title}
+        ${esc(m.title)}
       </div>
     </div>`;
   }).join('')+`</div>`;
+}
+
+// Called at the end of openDetail so the reviews block fills in after the
+// main detail markup is already on screen.
+function hydrateDetailExtras(movie){
+  if(!movie||!movie._id)return;
+  loadReviews(movie._id);
 }
 
 function switchBottomTab(tab){
@@ -3287,6 +3464,155 @@ function switchBottomTab(tab){
   } else {
     content.innerHTML=`<div class="prime-more-details-tab">${buildMovieDetails(movie)}</div>`;
   }
+}
+
+
+/* ═══ Ratings and reviews ═══════════════════════════════════════════════════
+   Star input for signed-in viewers, read-only list for everyone else. All
+   text from the API is escaped before it reaches innerHTML. */
+
+const STAR_PATH='M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.11 6.47L12 17.45l-5.81 3.05 1.11-6.47L2.6 9.45l6.5-.95L12 2.6z';
+let _reviewDraft={stars:0,movieId:null};
+
+function starSvg(filled){
+  return `<svg viewBox="0 0 24 24" fill="${filled?'currentColor':'none'}" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="${STAR_PATH}"/></svg>`;
+}
+
+function starRow(value,{interactive=false,small=false}={}){
+  const cls=`stars${interactive?'':' readonly'}${small?' small':''}`;
+  let html=`<div class="${cls}"${interactive?' role="radiogroup" aria-label="Your rating"':` role="img" aria-label="${value} out of 5 stars"`}>`;
+  for(let i=1;i<=5;i++){
+    const on=i<=value;
+    html+=interactive
+      ? `<button type="button" class="star-btn${on?' on':''}" role="radio" aria-checked="${on&&i===value}" aria-label="${i} star${i>1?'s':''}" onclick="setReviewStars(${i})">${starSvg(on)}</button>`
+      : `<span class="star-btn${on?' on':''}">${starSvg(on)}</span>`;
+  }
+  return html+'</div>';
+}
+
+function setReviewStars(n){
+  _reviewDraft.stars=n;
+  const row=document.getElementById('reviewStarInput');
+  if(row)row.outerHTML=`<div id="reviewStarInput">${starRow(n,{interactive:true})}</div>`;
+  const submit=document.getElementById('btnSubmitReview');
+  if(submit)submit.disabled=n<1;
+}
+
+function relativeDate(iso){
+  const then=new Date(iso).getTime();
+  if(isNaN(then))return '';
+  const days=Math.floor((Date.now()-then)/86400000);
+  if(days<1)return 'Today';
+  if(days===1)return 'Yesterday';
+  if(days<30)return `${days} days ago`;
+  return new Date(iso).toLocaleDateString(undefined,{month:'short',year:'numeric'});
+}
+
+async function loadReviews(movieId){
+  const body=document.getElementById('reviewsBody');
+  const score=document.getElementById('reviewsScore');
+  if(!body)return;
+
+  try{
+    const data=await api(`/movies/${movieId}/reviews`);
+    const list=data.reviews||[];
+    const mine=data.mine;
+    _reviewDraft={stars:mine?mine.stars:0,movieId};
+
+    const movie=state.currentMovie;
+    const avg=movie&&movie.avgRating?movie.avgRating:0;
+    const count=movie&&movie.ratingCount?movie.ratingCount:list.length;
+
+    if(score){
+      score.innerHTML=count
+        ? `<span class="reviews-score-value">${avg.toFixed(1)}</span>
+           <span class="reviews-score-meta">out of 5 · ${count} rating${count===1?'':'s'}</span>`
+        : `<span class="reviews-score-meta">No ratings yet</span>`;
+    }
+
+    let html='';
+
+    if(state.user){
+      html+=`<div class="review-form">
+        <div class="review-form-label">${mine?'Your rating':'Rate this title'}</div>
+        <div id="reviewStarInput">${starRow(_reviewDraft.stars,{interactive:true})}</div>
+        <textarea class="review-input" id="reviewComment" maxlength="1000"
+          placeholder="Say what you thought (optional)">${esc(mine?mine.comment:'')}</textarea>
+        <div class="review-form-actions">
+          <button class="btn-review" id="btnSubmitReview" ${_reviewDraft.stars<1?'disabled':''}
+            onclick="submitReview('${movieId}')">${mine?'Update rating':'Post rating'}</button>
+          ${mine?`<button class="btn-review-ghost" onclick="deleteReview('${movieId}')">Remove</button>`:''}
+        </div>
+      </div>`;
+    }else{
+      html+=`<div class="review-form">
+        <div class="review-form-label">Sign in to rate this title and see it in your history.</div>
+        <div class="review-form-actions">
+          <button class="btn-review" onclick="openAuth('login')">Sign in</button>
+        </div>
+      </div>`;
+    }
+
+    html+=list.length
+      ? list.map(r=>{
+          const initial=esc((r.userName||'V').trim().charAt(0).toUpperCase());
+          return `<div class="review-item">
+            <div class="review-avatar" aria-hidden="true">${initial}</div>
+            <div class="review-body">
+              <div class="review-meta">
+                <span class="review-name">${esc(r.userName||'Viewer')}</span>
+                ${starRow(r.stars,{small:true})}
+                <span class="review-date">${esc(relativeDate(r.createdAt))}</span>
+              </div>
+              ${r.comment?`<div class="review-text">${esc(r.comment)}</div>`:''}
+            </div>
+          </div>`;
+        }).join('')
+      : '<div class="reviews-empty">Be the first to rate this title.</div>';
+
+    body.innerHTML=html;
+  }catch(e){
+    body.innerHTML=`<div class="reviews-empty">Reviews could not load right now.</div>`;
+  }
+}
+
+async function submitReview(movieId){
+  const btn=document.getElementById('btnSubmitReview');
+  const comment=(document.getElementById('reviewComment')||{}).value||'';
+  if(_reviewDraft.stars<1){showToast('Pick a star rating first.','info');return;}
+
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    const res=await api(`/movies/${movieId}/reviews`,{
+      method:'POST',
+      body:JSON.stringify({stars:_reviewDraft.stars,comment})
+    });
+    if(state.currentMovie&&state.currentMovie._id===movieId){
+      state.currentMovie.avgRating=res.avgRating;
+      state.currentMovie.ratingCount=res.ratingCount;
+    }
+    showToast('Rating saved.','success');
+    loadReviews(movieId);
+  }catch(e){
+    showToast(e.message,'error');
+    if(btn){btn.disabled=false;btn.textContent='Post rating';}
+  }
+}
+
+async function deleteReview(movieId){
+  try{
+    await api(`/movies/${movieId}/reviews`,{method:'DELETE'});
+    showToast('Rating removed.','success');
+    loadReviews(movieId);
+  }catch(e){showToast(e.message,'error');}
+}
+
+/* Fire-and-forget play counter. Never blocks or breaks playback. */
+function recordView(movieId){
+  if(!movieId)return;
+  try{
+    fetch(API+`/movies/${movieId}/view`,{method:'POST',keepalive:true}).catch(()=>{});
+  }catch(e){/* offline — the count is not worth an error */}
 }
 
 function closeDetail(){
@@ -4682,6 +5008,7 @@ function openPlayer(movie){
   }
   showControls();
   attachVideoSource(src,movie);
+  recordView(movie._id);
 }
 
 function closePlayer(){
@@ -4745,16 +5072,56 @@ async function loadAdminDashboard(){
   const main=document.getElementById('adminMain');main.innerHTML='<p style="color:var(--muted)">Loading dashboard…</p>';
   try{
     const data=await api('/admin/stats');const s=data.overview;
+    const num=v=>(v||0).toLocaleString();
+    const header=`<div class="admin-header"><div class="admin-header-left"><button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button><h1>Dashboard</h1></div><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>`;
+
+    // Titles with no playable source fail silently in the player, so the
+    // dashboard calls them out rather than waiting for someone to report it.
+    const warnings=[];
+    if(s.missingMedia)warnings.push(`${num(s.missingMedia)} movie${s.missingMedia===1?'':'s'} ${s.missingMedia===1?'has':'have'} no video link and cannot play.`);
+    if(s.unpublished)warnings.push(`${num(s.unpublished)} title${s.unpublished===1?'':'s'} ${s.unpublished===1?'is':'are'} unpublished and hidden from viewers.`);
+
     main.innerHTML=`
-      <div class="admin-header"><div class="admin-header-left"><button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button><h1>Dashboard</h1></div><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
+      ${header}
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Movies</div><div class="stat-value">${s.totalMovies||0}</div></div>
-        <div class="stat-card"><div class="stat-label">Series</div><div class="stat-value">${s.totalSeries||0}</div></div>
-        <div class="stat-card"><div class="stat-label">Originals</div><div class="stat-value">${s.totalOriginals||0}</div></div>
-        <div class="stat-card"><div class="stat-label">Total Content</div><div class="stat-value" style="color:var(--gold)">${s.totalContent||0}</div></div>
-        <div class="stat-card"><div class="stat-label">Users</div><div class="stat-value">${s.totalUsers||0}</div></div>
+        <div class="stat-card"><div class="stat-label">Total plays</div><div class="stat-value" style="color:var(--gold)">${num(s.totalViews)}</div></div>
+        <div class="stat-card"><div class="stat-label">Viewers</div><div class="stat-value">${num(s.totalUsers)}</div></div>
+        <div class="stat-card"><div class="stat-label">New in 30 days</div><div class="stat-value" style="color:var(--green)">${num(s.newUsers)}</div></div>
+        <div class="stat-card"><div class="stat-label">Titles</div><div class="stat-value">${num(s.totalContent)}</div></div>
+        <div class="stat-card"><div class="stat-label">Ratings</div><div class="stat-value">${num(s.totalReviews)}</div></div>
       </div>
-      <p style="color:var(--muted);font-size:.88rem">Use the sidebar to manage content or upload new movies and series.</p>`;
+
+      ${warnings.length?`<div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.25);border-radius:12px;padding:14px 16px;margin-bottom:22px">
+        <div style="font-weight:600;font-size:.9rem;margin-bottom:6px">Needs attention</div>
+        ${warnings.map(w=>`<div style="font-size:.85rem;color:rgba(240,240,248,.8);line-height:1.6">${esc(w)}</div>`).join('')}
+      </div>`:''}
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px">
+        <div>
+          <h2 style="font-size:1rem;font-weight:600;margin-bottom:12px">Most watched</h2>
+          ${(data.topTitles||[]).length
+            ? (data.topTitles||[]).map((t,i)=>`
+              <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+                <span style="color:var(--muted);font-size:.8rem;width:18px">${i+1}</span>
+                <span style="flex:1;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.title)}</span>
+                <span style="color:var(--gold);font-size:.82rem;white-space:nowrap">${num(t.views)} plays</span>
+              </div>`).join('')
+            : '<p style="color:var(--muted);font-size:.86rem">No plays recorded yet.</p>'}
+        </div>
+        <div>
+          <h2 style="font-size:1rem;font-weight:600;margin-bottom:12px">Newest sign-ups</h2>
+          ${(data.recentUsers||[]).length
+            ? (data.recentUsers||[]).map(u=>`
+              <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.name)}</span>
+                  <span style="display:block;font-size:.76rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}</span>
+                </span>
+                ${u.role==='admin'?'<span style="font-size:.7rem;padding:2px 8px;border-radius:4px;background:rgba(224,168,48,.15);color:var(--gold)">Admin</span>':''}
+              </div>`).join('')
+            : '<p style="color:var(--muted);font-size:.86rem">No accounts yet.</p>'}
+        </div>
+      </div>`;
   }catch(e){main.innerHTML=`<div class="admin-header"><div class="admin-header-left"><button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button><h1>Dashboard</h1></div><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div><div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminDashboard()">Try Again</button></div>`;}
 }
 
@@ -4769,7 +5136,7 @@ async function loadAdminMovies(main,searchQuery=''){
       <div class="admin-header"><div class="admin-header-left"><button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button><h1>Manage Content</h1><div class="admin-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="adminSearchInput" placeholder="Search content…" value="${searchQuery}" oninput="debounceAdminSearch(this.value)"/></div></div><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div>
       <div style="color:var(--muted);font-size:.82rem;margin-bottom:14px">${filtered.length} item${filtered.length!==1?'s':''}${searchQuery?' found for "'+searchQuery+'"':''}</div>
       <div class="admin-table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Year</th><th>Genres</th><th>Rating</th><th>Video</th><th style="text-align:right">Actions</th></tr></thead>
-      <tbody>${filtered.map(m=>`<tr><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500">${m.title}</td><td><span style="text-transform:uppercase;font-size:.75rem;padding:2px 8px;border-radius:4px;background:rgba(224,168,48,.15);color:var(--gold)">${m.type}</span></td><td>${m.releaseYear||'-'}</td><td style="color:var(--muted);font-size:.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis">${(m._genres_normalized||[]).join(', ')||'-'}</td><td>${m.rating||'-'}</td><td style="color:${m.videoUrl||m.hlsUrl?'var(--green)':'var(--red)'};font-size:.82rem">${m.videoUrl||m.hlsUrl?'✓ Available':'✗ Missing'}</td><td style="text-align:right;white-space:nowrap"><button class="btn-table-action edit" onclick="editMovie('${m._id}')">✏️ Edit</button> <button class="btn-table-action delete" onclick="confirmDeleteMovie('${m._id}','${m.title.replace(/'/g,"\\'")}')">🗑️ Delete</button></td></tr>`).join('')}</tbody></table></div>`;
+      <tbody>${filtered.map(m=>`<tr><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(m.title)}</td><td><span style="text-transform:uppercase;font-size:.75rem;padding:2px 8px;border-radius:4px;background:rgba(224,168,48,.15);color:var(--gold)">${m.type}</span></td><td>${m.releaseYear||'-'}</td><td style="color:var(--muted);font-size:.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis">${(m._genres_normalized||[]).join(', ')||'-'}</td><td>${m.rating||'-'}</td><td style="color:${m.videoUrl||m.hlsUrl?'var(--green)':'var(--red)'};font-size:.82rem">${m.videoUrl||m.hlsUrl?'✓ Available':'✗ Missing'}</td><td style="text-align:right;white-space:nowrap"><button class="btn-table-action edit" onclick="editMovie('${m._id}')">✏️ Edit</button> <button class="btn-table-action delete" onclick="confirmDeleteMovie('${m._id}','${escJs(m.title)}')">🗑️ Delete</button></td></tr>`).join('')}</tbody></table></div>`;
   }catch(e){main.innerHTML=`<div class="admin-header"><div class="admin-header-left"><button class="admin-menu-toggle" onclick="toggleMobileAdminSidebar()">☰</button><h1>Manage Content</h1></div><button class="admin-close" onclick="closeAdmin()">← Back to Site</button></div><div class="admin-error-box"><p>${e.message}</p><button onclick="loadAdminMovies(document.getElementById('adminMain'))">Try Again</button></div>`;}
 }
 
@@ -5278,8 +5645,25 @@ async function submitMovie(){
   }catch(e){ showToast(e.message,'error'); if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';} }
 }
 
+async function loadHomePayload(){
+  // /api/home returns all three rows plus trending in one round trip.
+  try{
+    const data=await api('/home');
+    const norm=list=>(list||[]).map(m=>{m._genres_normalized=normalizeGenres(m.genres);return m;});
+    const movies=norm(data.movies),series=norm(data.series),originals=norm(data.originals);
+    state.trending=norm(data.trending);
+    // Keep the offline cache warm.
+    idbSetAll('movies',[...movies,...series,...originals]).catch(()=>{});
+    return [movies,series,originals];
+  }catch(e){
+    // Older deployment or a network blip — fall back to per-type requests.
+    console.warn('Home bundle unavailable, falling back:',e.message);
+    return Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
+  }
+}
+
 async function refreshHomeData(){
-  const[movies,series,originals]=await Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
+  const[movies,series,originals]=await loadHomePayload();
   state.movies=movies;state.series=series;state.originals=originals;
   // Deduplicate by _id in case of any overlap between type buckets
   const seen=new Set();
@@ -5498,7 +5882,7 @@ async function init(){
   // All overlay pushState entries sit on top of this. Popping back to it is a no-op.
   history.replaceState({skflip:'home'}, '', location.href);
   loadStoredAuth();renderNav();renderFooter();syncOfferButton();showSkeletons();
-  const[movies,series,originals]=await Promise.all([fetchMovies('movie'),fetchMovies('series'),fetchMovies('original')]);
+  const[movies,series,originals]=await loadHomePayload();
   state.movies=movies;state.series=series;state.originals=originals;
   const seen=new Set();
   state.allContent=[...movies,...series,...originals].filter(m=>{if(seen.has(m._id))return false;seen.add(m._id);return true;});
@@ -5512,9 +5896,28 @@ async function init(){
   populateRow(document.getElementById('originalsRow'),originals,'No originals yet.');
   renderGenreGrid();
   renderContinueWatching();
-  document.getElementById('loadingScreen').classList.add('hidden');
 }
-init();
+
+// The splash screen hides in a finally block, so a failed request shows the
+// (empty) app instead of trapping the visitor on a spinner forever.
+init()
+  .catch(err=>{
+    console.error('Startup failed:',err);
+    showToast('We could not load the catalogue. Check your connection and refresh.','error');
+  })
+  .finally(()=>{
+    const splash=document.getElementById('loadingScreen');
+    if(splash)splash.classList.add('hidden');
+  });
+
+// Register the service worker for offline browsing and installability.
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').catch(err=>{
+      console.warn('Service worker registration failed:',err.message);
+    });
+  });
+}
 </script>
 
 
@@ -5580,17 +5983,5 @@ body.blur-bg #home-screen {
 
 </style>
 
-<!-- ── Dev Live Reload (localhost only — auto-reloads when index.html / index.js changes) ── -->
-<script>
-(function(){
-  if(location.hostname!=='localhost'&&location.hostname!=='127.0.0.1')return;
-  function connect(){
-    const es=new EventSource('/api/dev-reload');
-    es.onmessage=function(e){if(e.data==='reload'){console.log('[SkFlip] File changed — reloading…');location.reload();}};
-    es.onerror=function(){es.close();setTimeout(connect,3000);};
-  }
-  connect();
-})();
-</script>
 
 <!-- Updated: Sign-out confirmation, login-required offer claim, and cross-device wishlist support enabled. -->
