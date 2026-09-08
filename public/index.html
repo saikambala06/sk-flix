@@ -5872,7 +5872,7 @@ function confirmDeleteMovie(id,title){
 
 async function executeDeleteMovie(id){
   try{
-    await api('/movies/'+id,{method:'DELETE'});
+    await api('/admin/movies/'+id,{method:'DELETE'});
     showToast('Content deleted successfully','success');
     const wishList=getWishlist();
     const idx=wishList.indexOf(id);
@@ -6367,10 +6367,10 @@ async function submitMovie(){
   if(hasDraft){ showToast('You have unsaved episode edits. Save or cancel them first.','error'); if(btn){btn.disabled=false;btn.textContent=state.editingMovieId?'Update Content':'Save Content';} return; }
   try{
     if(state.editingMovieId){
-      await api('/movies/'+state.editingMovieId,{method:'PUT',body:JSON.stringify(payload)});
+      await api('/admin/movies/'+state.editingMovieId,{method:'PUT',body:JSON.stringify(payload)});
       showToast('"'+payload.title+'" updated!','success');
     } else {
-      await api('/movies',{method:'POST',body:JSON.stringify(payload)});
+      await api('/admin/movies',{method:'POST',body:JSON.stringify(payload)});
       showToast('"'+payload.title+'" saved!','success');
     }
     state.editingMovieId = null;

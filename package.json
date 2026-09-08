@@ -9,7 +9,7 @@
     "dev": "node --watch api/index.js",
     "seed": "node scripts/seed.js",
     "check": "node -e \"require('./api/index.js'); console.log('API loaded without errors')\"",
-    "test": "node scripts/smoke-test.js && node scripts/e2e-test.js && node scripts/test-source-resolver.js && node scripts/test-fallback-chain.js && node scripts/test-r2.js"
+    "test": "node scripts/test-api-contract.js && node scripts/smoke-test.js && node scripts/e2e-test.js && node scripts/test-source-resolver.js && node scripts/test-fallback-chain.js && node scripts/test-r2.js"
   },
   "engines": {
     "node": ">=18.0.0"

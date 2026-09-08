@@ -197,7 +197,7 @@ scripts/
   seed.js  smoke-test.js  e2e-test.js
 ```
 
-The admin routes moved from `/api/movies` to `/api/admin/movies`. Anything calling the old paths needs updating; the frontend already is.
+The admin content routes moved from `/api/movies` to `/api/admin/movies`. Any external client calling the old paths needs updating. `scripts/test-api-contract.js` cross-checks every call the frontend makes against the routes the server actually mounts, so a mismatch fails the suite instead of surfacing when someone presses Save.
 
 ---
 
@@ -210,3 +210,176 @@ The admin routes moved from `/api/movies` to `/api/admin/movies`. Anything calli
 - **One HTML file.** It works and it's fast, but past ~6,000 lines you'll want a build step.
 
 Only publish content you have the rights to distribute.
+
+---
+
+## Video sources
+
+### What browsers can actually play
+
+| | Support |
+|---|---|
+| Containers | MP4, WebM, Ogg — plus HLS and DASH via Media Source Extensions |
+| Video codecs | H.264 everywhere; VP9 and AV1 widely; HEVC only on Safari |
+| Audio codecs | AAC everywhere; Opus and Vorbis in WebM |
+
+**MKV, AVI, WMV, FLV and raw MPEG-TS do not play in any browser**, even when the streams inside are H.264 and AAC. The container is the problem, not the codecs. An MKV is usually an instant fix:
+
+```bash
+ffmpeg -i input.mkv -c copy -movflags +faststart output.mp4
+```
+
+That's a remux, not a re-encode — seconds, not minutes, and no quality loss.
+
+### How the player routes a URL
+
+`resolveSource(url)` inspects each URL and picks an engine:
+
+- **`.m3u8` or `/hls/` in the path** → hls.js, or Safari's native HLS where that's better
+- **`.mpd`** → dash.js, lazy-loaded only when a DASH manifest actually appears, so nobody downloads 400 KB they don't need
+- **`.mp4`, `.webm`, `.ogv`, `.mov`** → the native `<video>` element
+- **`.mkv`, `.avi`, `.wmv`, `.flv`, `.ts`** → refused up front with the ffmpeg command to fix it
+- **YouTube, Vimeo, Mega, MediaFire, `.php` pages** → refused; these serve HTML, not a stream
+- **No extension** (signed or tokenised URLs) → falls back to path keywords, then progressive
+
+Detection strips the query string first, so `movie.mp4?token=abc` reads as `.mp4`, and a path like `/m3u8-archive/movie.mp4` is no longer mistaken for HLS.
+
+Share links are rewritten on save: Google Drive `/file/d/<id>/view` becomes the direct download endpoint, Dropbox `?dl=0` becomes `?raw=1`, GitHub `/blob/` becomes `/raw/`.
+
+### The admin URL checker
+
+Paste a URL into the upload form and it is checked before you save. It reports format, reachability, whether range requests work, and file size — using a ranged GET rather than HEAD, since some CDNs reject HEAD outright.
+
+### Large files
+
+"Any size" comes down to **HTTP range requests**. Without `Accept-Ranges: bytes` the browser cannot seek and must download the entire file before playback starts. The checker warns when a host lacks it.
+
+Above roughly 2 GB, a single progressive MP4 streams badly regardless of range support: one fixed bitrate, no adaptation, long startup. Use HLS instead — it splits the file into segments and switches quality to match the viewer's bandwidth. R2 stores the segments and egress is free.
+
+### CORS
+
+This trips people up because the two paths differ:
+
+- **Progressive MP4** — `<video src>` does **not** require CORS. A plain MP4 from a host with no CORS headers plays fine.
+- **HLS and DASH** — fetched by JavaScript, so they **do** require `Access-Control-Allow-Origin`. Without it the stream fails with what looks like a generic network error.
+
+The player names CORS explicitly in that case instead of showing "Video stream error".
+
+### Error handling
+
+Fatal HLS errors now retry a bounded number of times — 3 network, 2 media — then stop with a specific message. The previous version called `startLoad()` on every fatal error with no cap, so a dead URL retried forever and pinned the CPU.
+
+### Source fallback
+
+A title can carry both an `hlsUrl` and a `videoUrl`. The player tries the adaptive stream first, because it seeks better and adapts to bandwidth, and falls back to the direct file when that fails. A dead HLS link no longer kills playback.
+
+```
+hlsUrl  →  fails  →  videoUrl  →  fails  →  specific error
+```
+
+Three details keep it from thrashing:
+
+**Generation counter.** Tearing down hls.js can fire its error handler *after* the next source is attached. Every async callback checks a token, so a superseded attempt cannot advance the queue twice and skip a source.
+
+**Position is preserved.** If the stream dies twenty minutes in, the fallback resumes at twenty minutes rather than restarting. Positions under one second are ignored, since those mean playback never really began.
+
+**Unplayable formats are skipped, not attempted.** An MKV sitting in `videoUrl` costs no time.
+
+Failures are ranked by how useful they are. If any source failed for a reason you can act on — an MKV that needs remuxing — that message wins over a generic summary, even when several sources failed. The full list goes to the console.
+
+The switch shows a brief info toast rather than an error, since playback is continuing.
+
+```bash
+node scripts/test-fallback-chain.js   # 20 checks
+node scripts/test-source-resolver.js  # 32 checks
+```
+
+---
+
+## R2 storage
+
+### There was no Cloudinary code to remove
+
+Nothing in the project ever referenced Cloudinary — you were pasting Cloudinary URLs into the `videoUrl` field by hand. Those URLs keep working; the resolver treats them as ordinary progressive files. Replace them at your own pace.
+
+### Why uploads go straight to R2
+
+**Vercel caps a serverless request body at 4.5 MB.** A 2 GB film cannot be proxied through the API no matter how the endpoint is written. So the browser uploads directly to R2 using a presigned URL, and the server only ever handles the signature — never the bytes. This is faster too: one hop instead of two.
+
+### Setup
+
+1. Cloudflare dashboard → **R2** → create a bucket (e.g. `skflip-media`).
+2. **Manage API Tokens** → create a token with **Object Read & Write** scoped to that bucket. Copy the access key id and secret — the secret is shown once.
+3. Give the bucket a public address: either connect a custom domain (recommended) or enable the `r2.dev` subdomain.
+4. Add `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` and `R2_PUBLIC_URL` to your environment.
+5. **Add a CORS policy on the bucket** — without it the browser cannot PUT:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://your-site.vercel.app", "http://localhost:3000"],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+`ExposeHeaders: ["ETag"]` is not optional. Multipart completion needs each part's ETag, and the browser cannot read it unless the bucket exposes it. Miss this and large uploads fail at the final step with a confusing error.
+
+### Using it
+
+The upload form now has a drop zone above the video URL field. Choose or drop a file and it uploads to R2, then fills in the URL automatically.
+
+- Under 48 MB: a single request.
+- Over 48 MB: split into 16 MB parts, three at a time, with progress and per-part retry. A failed part retries three times with backoff rather than restarting the whole file.
+- Cancelling aborts the multipart upload, so orphaned parts are not left billing as storage.
+- Ceiling is 20 GB per object.
+
+### Endpoints
+
+```
+GET    /api/admin/storage/status
+POST   /api/admin/storage/upload-url          Single PUT
+POST   /api/admin/storage/multipart/create
+POST   /api/admin/storage/multipart/sign      Batches of up to 100 parts
+POST   /api/admin/storage/multipart/complete
+POST   /api/admin/storage/multipart/abort
+GET    /api/admin/storage/objects
+DELETE /api/admin/storage/object
+POST   /api/admin/storage/playback-url        Refresh a signed URL
+```
+
+All admin-only. A leaked presigned PUT would let anyone write into your bucket, so the whole router sits behind `requireAuth` + `requireAdmin`, and both test suites check it.
+
+### Private playback
+
+Set `R2_PRIVATE_PLAYBACK=true` to keep the bucket private and sign every playback URL with a 6-hour expiry.
+
+The trade-off is real: signed URLs carry a unique query string per request, so the CDN cannot cache them. You get hotlink protection and lose edge caching. For most catalogues a public bucket on a custom domain is the better default — leave this off unless you specifically need it.
+
+### Keys
+
+Uploads are stored as `video/<year>/<slug>-<random>.<ext>`, so `My Film (2024).mp4` becomes `video/2026/my-film-2024-a1b2c3d4.mp4`. The random suffix means re-uploading the same filename never overwrites the old object, which is why every upload can be cached immutably for a year.
+
+Path traversal, control characters and unknown extensions are rejected before a key reaches the bucket.
+
+```bash
+node scripts/test-r2.js   # 35 checks
+```
+
+
+---
+
+## Contract test
+
+`scripts/test-api-contract.js` extracts every API call in `index.html`, extracts every route the Express app mounts, and checks each call resolves.
+
+It exists because three admin calls kept pointing at `/api/movies` after those routes moved to `/api/admin/movies`. Everything compiled. Every other test passed. The failure only appeared when an admin pressed Save and got `No API route matches POST /movies`.
+
+Unit tests could not catch it: the frontend and backend were each correct in isolation and only disagreed at the boundary. Run this after any route change.
+
+```bash
+npm test   # contract, security, e2e, resolver, fallback, R2 — 167 checks
+```
