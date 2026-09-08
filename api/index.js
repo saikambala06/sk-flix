@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth');
 const contentRoutes = require('./routes/content');
 const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin');
+const storageRoutes = require('./routes/storage');
 
 const app = express();
 
@@ -79,6 +80,7 @@ app.get('/api/health', (req, res) => {
     uptime: Math.round(process.uptime()),
     db: states[mongoose.connection.readyState] || 'unknown',
     mail: isMailConfigured() ? 'configured' : 'not configured',
+    storage: require('./lib/r2').isConfigured() ? 'r2 configured' : 'r2 not configured',
     time: new Date().toISOString(),
   });
 });
@@ -91,6 +93,7 @@ app.use('/api', ensureDB);
 /* ------------------------------------------------------------------ */
 
 app.use('/api/auth', authRoutes);
+app.use('/api/admin/storage', storageRoutes); // must precede /api/admin
 app.use('/api/admin', adminRoutes);
 app.use('/api', contentRoutes); // /home, /movies, /genres, reviews
 app.use('/api', userRoutes); // /wishlist, /continue-watching

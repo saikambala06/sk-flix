@@ -101,6 +101,14 @@ function check(label, condition, detail) {
     ['DELETE', '/api/admin/movies/507f1f77bcf86cd799439011'],
     ['PUT', '/api/admin/users/507f1f77bcf86cd799439011'],
     ['DELETE', '/api/admin/users/507f1f77bcf86cd799439011'],
+    // Storage signing must be admin-only: a leaked presigned PUT lets anyone
+    // write arbitrary objects into the bucket.
+    ['GET', '/api/admin/storage/status'],
+    ['POST', '/api/admin/storage/upload-url'],
+    ['POST', '/api/admin/storage/multipart/create'],
+    ['POST', '/api/admin/storage/multipart/sign'],
+    ['POST', '/api/admin/storage/multipart/complete'],
+    ['DELETE', '/api/admin/storage/object'],
   ];
   for (const [method, route] of adminRoutes) {
     const res = await request(method, route, { body: {} });

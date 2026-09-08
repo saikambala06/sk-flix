@@ -184,6 +184,12 @@ const check = (label, ok, detail) => {
   });
   check('admin CAN add content', adminUploads.status === 201, `got ${adminUploads.status}`);
 
+  console.log('\nStorage signing is admin-only');
+  const viewerSigns = await req('POST', '/api/admin/storage/upload-url', {
+    token: viewerToken, body: { filename: 'anything.mp4' },
+  });
+  check('normal user CANNOT mint an upload URL', viewerSigns.status === 403, `got ${viewerSigns.status}`);
+
   console.log('\nMass assignment and URL safety');
   const sneaky = await req('POST', '/api/admin/movies', {
     token: adminToken,

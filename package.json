@@ -2,18 +2,21 @@
   "name": "skflix",
   "version": "2.0.0",
   "private": true,
-  "description": "SkFlip — streaming platform with an authenticated admin studio, HLS player and PWA client.",
+  "description": "SkFlip \u2014 streaming platform with an authenticated admin studio, HLS player and PWA client.",
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
     "dev": "node --watch api/index.js",
     "seed": "node scripts/seed.js",
-    "check": "node -e \"require('./api/index.js'); console.log('API loaded without errors')\""
+    "check": "node -e \"require('./api/index.js'); console.log('API loaded without errors')\"",
+    "test": "node scripts/smoke-test.js && node scripts/e2e-test.js && node scripts/test-source-resolver.js && node scripts/test-fallback-chain.js && node scripts/test-r2.js"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.19.2",

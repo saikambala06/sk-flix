@@ -1687,6 +1687,22 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 .review-text{font-size:.88rem;color:rgba(240,240,248,.8);line-height:1.6;word-break:break-word;}
 .reviews-empty{color:var(--muted);font-size:.88rem;padding:16px 0;}
 
+/* ── R2 upload zone ─────────────────────────────────────────────────────── */
+.r2-drop{
+  border:1.5px dashed var(--border);border-radius:12px;
+  padding:16px;background:var(--bg3);
+  transition:border-color .18s ease,background .18s ease;
+}
+.r2-drop.drop-active{border-color:var(--gold);background:rgba(224,168,48,.06);}
+.r2-drop-inner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.r2-drop-icon{
+  flex:0 0 38px;width:38px;height:38px;border-radius:10px;
+  background:rgba(224,168,48,.12);color:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.15rem;font-weight:600;
+}
+.r2-drop-hint{font-size:.78rem;color:var(--muted);margin-top:6px;}
+
 </style>
 </head>
 <body>
@@ -2195,7 +2211,9 @@ new MutationObserver(()=>{
 
 let state={
   user:null,token:null,heroMovie:null,currentMovie:null,
-  playerHls:null,movies:[],series:[],originals:[],allContent:[],
+  playerHls:null,playerDash:null,_resolvedSource:null,
+  _sourceQueue:[],_sourceIndex:-1,_sourceFailures:[],_srcGen:0,
+  movies:[],series:[],originals:[],allContent:[],
   activeGenreFilter:null,searchTimer:null,adminTab:'dashboard',
   adminMoviesList:[],editingMovieId:null,offerClaimed:false,
   _resumeTime:0, _lastSaveTime:0
@@ -4925,7 +4943,10 @@ function cleanupPlayerAfterClose(){
   video.pause();
   if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
   if(screen.orientation&&screen.orientation.unlock)try{screen.orientation.unlock();}catch(e){}
+  state._srcGen=(state._srcGen||0)+1; // orphan any in-flight callbacks
+  state._sourceQueue=[];
   if(state.playerHls){state.playerHls.destroy();state.playerHls=null;}
+  if(state.playerDash){try{state.playerDash.reset();}catch(e){}state.playerDash=null;}
   video.removeAttribute('src');
   video.load();
   clearTimeout(controlsTimeout);
@@ -4941,11 +4962,636 @@ function cleanupPlayerAfterClose(){
   _maybeReopenDetailAfterPlayerClose();
 }
 
-function attachVideoSource(src,movie){
+
+/* ═══ Video source resolution ═══════════════════════════════════════════════
+
+   A browser cannot play "any" video URL, and pretending otherwise just moves
+   the failure somewhere harder to debug. What it can play:
+
+     Container   MP4, WebM, Ogg, plus HLS/DASH via Media Source Extensions
+     Video codec H.264 everywhere; VP9 and AV1 widely; HEVC only on Safari
+     Audio codec AAC everywhere; Opus and Vorbis in WebM
+
+   MKV, AVI, WMV, FLV and raw MPEG-TS are not supported by any browser, even
+   when the streams inside them are H.264 + AAC — the container is the problem,
+   not the codecs. Those need remuxing (see the ffmpeg one-liner in the README).
+
+   This module works out which engine to hand a URL to, repairs the share links
+   people paste most often, and when nothing will work, says why. */
+
+const MEDIA_EXT = {
+  m3u8:'hls', mpd:'dash',
+  mp4:'progressive', m4v:'progressive', webm:'progressive',
+  ogv:'progressive', ogg:'progressive', mov:'progressive',
+  // Recognised, but the browser cannot play them.
+  mkv:'unsupported', avi:'unsupported', wmv:'unsupported', flv:'unsupported',
+  ts:'unsupported', mpg:'unsupported', mpeg:'unsupported', rmvb:'unsupported',
+  '3gp':'unsupported', vob:'unsupported', divx:'unsupported', m2ts:'unsupported'
+};
+
+const UNSUPPORTED_HELP = {
+  mkv:'MKV is not playable in browsers. Remux it — this is instant and lossless: ffmpeg -i in.mkv -c copy out.mp4',
+  avi:'AVI needs a real conversion: ffmpeg -i in.avi -c:v libx264 -crf 20 -c:a aac out.mp4',
+  wmv:'WMV needs a real conversion: ffmpeg -i in.wmv -c:v libx264 -crf 20 -c:a aac out.mp4',
+  flv:'FLV needs a real conversion: ffmpeg -i in.flv -c:v libx264 -crf 20 -c:a aac out.mp4',
+  ts:'A raw MPEG-TS file needs packaging as HLS or MP4 before a browser will play it.'
+};
+
+/* Share links point at an HTML page, not a video file. These rewrites turn the
+   common ones into something a <video> tag can actually load. */
+function normalizeMediaUrl(raw){
+  const url=String(raw||'').trim();
+  if(!url)return {url:'',note:''};
+
+  // Google Drive: /file/d/<id>/view  →  direct download endpoint.
+  const drive=url.match(/drive\.google\.com\/file\/d\/([\w-]+)/)
+           || url.match(/drive\.google\.com\/open\?id=([\w-]+)/);
+  if(drive){
+    return {
+      url:`https://drive.google.com/uc?export=download&id=${drive[1]}`,
+      note:'Google Drive rewritten to a direct link. Drive throttles video and blocks large files behind a virus-scan page, so it is not reliable for streaming.'
+    };
+  }
+
+  // Dropbox: ?dl=0 serves a preview page; raw=1 serves the file.
+  if(/dropbox\.com/.test(url)){
+    return {
+      url:url.replace(/[?&]dl=0/,'').replace(/[?&]dl=1/,'')+(url.includes('?')?'&':'?')+'raw=1',
+      note:'Dropbox rewritten to a direct link. Dropbox rate-limits heavy traffic.'
+    };
+  }
+
+  // GitHub blob pages → raw file.
+  if(/github\.com\/.+\/blob\//.test(url)){
+    return {url:url.replace('/blob/','/raw/'),note:'GitHub rewritten to a raw link.'};
+  }
+
+  return {url,note:''};
+}
+
+/* Page URLs that will never yield a media stream directly. */
+function detectPageUrl(url){
+  if(/youtube\.com\/watch|youtu\.be\//.test(url))
+    return 'This is a YouTube page, not a video file. YouTube does not allow playback outside its own player — use their embed instead of this field.';
+  if(/vimeo\.com\/\d+/.test(url))
+    return 'This is a Vimeo page, not a video file. Use a Vimeo embed, or the direct file URL from a Pro account.';
+  if(/mega\.nz|mediafire\.com|1fichier\.com/.test(url))
+    return 'File-locker links serve an HTML page, not a stream. Host the file somewhere that serves it directly.';
+  if(/\.(html?|php|aspx)(\?|$)/i.test(url))
+    return 'This looks like a web page rather than a video file.';
+  return null;
+}
+
+function extensionOf(url){
+  try{
+    // Strip query and hash first, or "video.mp4?token=x" reads as extension "mp4?token=x".
+    const path=new URL(url,location.origin).pathname;
+    const m=path.match(/\.([a-z0-9]{2,5})$/i);
+    return m?m[1].toLowerCase():'';
+  }catch(e){
+    const m=String(url).split(/[?#]/)[0].match(/\.([a-z0-9]{2,5})$/i);
+    return m?m[1].toLowerCase():'';
+  }
+}
+
+/**
+ * Decide how to play a URL.
+ * @returns {{kind:string, url:string, ext:string, note:string, reason:string}}
+ *          kind is 'hls' | 'dash' | 'progressive' | 'unsupported' | 'page'
+ */
+function resolveSource(raw){
+  const {url,note}=normalizeMediaUrl(raw);
+  if(!url)return {kind:'unsupported',url:'',ext:'',note:'',reason:'No video URL is set for this title.'};
+
+  const pageProblem=detectPageUrl(url);
+  if(pageProblem)return {kind:'page',url,ext:'',note,reason:pageProblem};
+
+  const ext=extensionOf(url);
+  let kind=MEDIA_EXT[ext];
+
+  // Signed and tokenised URLs often carry no extension. Fall back to keywords
+  // in the path, then assume progressive and let the media element decide.
+  if(!kind){
+    if(/m3u8|\/hls\//i.test(url))kind='hls';
+    else if(/\.mpd|\/dash\//i.test(url))kind='dash';
+    else kind='progressive';
+  }
+
+  if(kind==='unsupported'){
+    return {kind,url,ext,note,
+      reason:UNSUPPORTED_HELP[ext]||`Browsers cannot play .${ext} files. Convert to MP4 or HLS.`};
+  }
+
+  return {kind,url,ext,note,reason:''};
+}
+
+/* dash.js is ~400 KB, so it loads only when a DASH manifest actually appears. */
+let _dashLoader=null;
+function loadDashJs(){
+  if(window.dashjs)return Promise.resolve(window.dashjs);
+  if(_dashLoader)return _dashLoader;
+  _dashLoader=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/dashjs@4.7.4/dist/dash.all.min.js';
+    s.onload=()=>resolve(window.dashjs);
+    s.onerror=()=>reject(new Error('dash.js failed to load'));
+    document.head.appendChild(s);
+  });
+  return _dashLoader;
+}
+
+/* Turn a media element error code into something a human can act on. */
+function describeMediaError(el,resolved){
+  const err=el.error;
+  if(!err)return 'The video could not be played.';
+  switch(err.code){
+    case 1: return 'Loading was aborted.';
+    case 2: return 'The network dropped while loading. The host may be rate-limiting or offline.';
+    case 3: return 'The file is corrupt, or its codec is not supported. H.264 video with AAC audio plays everywhere.';
+    case 4: return resolved && resolved.ext
+      ? `This source could not be loaded. Check the URL is public, allows hotlinking, and that .${resolved.ext} is a format browsers support.`
+      : 'This source could not be loaded. Check the URL is publicly reachable and serves a video file.';
+    default: return 'The video could not be played.';
+  }
+}
+
+/* ═══ Admin: check a URL before saving it ═══════════════════════════════════
+   Catches the failures that otherwise only show up when a viewer presses play:
+   wrong format, no CORS, no range support, dead link. */
+
+async function checkVideoUrl(rawUrl,targetElId){
+  const out=document.getElementById(targetElId);
+  if(!out)return;
+  const url=String(rawUrl||'').trim();
+
+  if(!url){out.innerHTML='';return;}
+
+  out.innerHTML='<span style="color:var(--muted);font-size:.8rem">Checking…</span>';
+
+  const resolved=resolveSource(url);
+  const lines=[];
+  const bad=t=>lines.push(`<div style="color:var(--red);font-size:.8rem;line-height:1.5">✗ ${esc(t)}</div>`);
+  const warn=t=>lines.push(`<div style="color:var(--gold);font-size:.8rem;line-height:1.5">! ${esc(t)}</div>`);
+  const good=t=>lines.push(`<div style="color:var(--green);font-size:.8rem;line-height:1.5">✓ ${esc(t)}</div>`);
+
+  if(resolved.kind==='unsupported'||resolved.kind==='page'){
+    bad(resolved.reason);
+    out.innerHTML=lines.join('');
+    return;
+  }
+  if(resolved.note)warn(resolved.note);
+  good(`Detected ${resolved.kind==='hls'?'HLS stream':resolved.kind==='dash'?'DASH stream':'progressive file'}${resolved.ext?' (.'+resolved.ext+')':''}`);
+
+  // A ranged GET tells us more than HEAD: some CDNs reject HEAD outright, and
+  // the response reveals range support, size and content type in one request.
+  try{
+    const res=await fetch(resolved.url,{method:'GET',headers:{Range:'bytes=0-1'},mode:'cors'});
+
+    if(!res.ok&&res.status!==206){
+      bad(`The host answered ${res.status}. Check the file is public and hotlinking is allowed.`);
+    }else{
+      good('URL is reachable');
+
+      const type=res.headers.get('content-type')||'';
+      if(type&&!/video|octet-stream|mpegurl|dash|application\/x-mpegURL/i.test(type)){
+        warn(`Content-Type is "${type}" — the host may be serving a web page rather than a video.`);
+      }
+
+      if(resolved.kind==='progressive'){
+        // Without range support the browser must download the whole file
+        // before it can seek. This is the "any size" constraint.
+        if(res.status===206||res.headers.get('accept-ranges')==='bytes'){
+          good('Range requests supported — seeking and large files will work');
+        }else{
+          warn('No range request support. Viewers will not be able to seek, and the whole file must download before playback starts. Convert to HLS for anything over ~500 MB.');
+        }
+
+        const range=res.headers.get('content-range');
+        const total=range?parseInt(range.split('/')[1],10):parseInt(res.headers.get('content-length'),10);
+        if(total&&!isNaN(total)){
+          const gb=total/1073741824;
+          good(`File size ${gb>=1?gb.toFixed(2)+' GB':(total/1048576).toFixed(0)+' MB'}`);
+          if(gb>2)warn('Files above ~2 GB stream poorly as a single MP4. HLS splits them into segments and adapts to the viewer\'s bandwidth.');
+        }
+      }
+    }
+  }catch(e){
+    // fetch() throwing with an otherwise valid URL almost always means CORS.
+    if(resolved.kind==='hls'||resolved.kind==='dash'){
+      bad('Blocked by CORS. HLS and DASH are fetched by JavaScript, so the host must send Access-Control-Allow-Origin. This stream will not play.');
+    }else{
+      warn('Could not verify from the browser (CORS). A plain MP4 may still play, since <video> does not require CORS — test it after saving.');
+    }
+  }
+
+  out.innerHTML=lines.join('');
+}
+
+// Debounced so it does not fire on every keystroke.
+let _urlCheckTimer=null;
+// Called after the upload form paints, so the drop zone exists to bind to.
+function initUploadWidgets(){
+  bindDropZone('up_video_drop','up_video','up_video_progress');
+}
+
+function scheduleUrlCheck(input,targetElId){
+  clearTimeout(_urlCheckTimer);
+  _urlCheckTimer=setTimeout(()=>checkVideoUrl(input.value,targetElId),700);
+}
+
+/* ═══ Source fallback chain ════════════════════════════════════════════════
+
+   A title can carry more than one source. We try the adaptive stream first
+   because it seeks better and adjusts to bandwidth, then fall back to the
+   direct file if it fails. A dead HLS link no longer kills playback outright.
+
+   Three details make this behave rather than thrash:
+
+   1. A generation counter. Tearing down hls.js can fire its error handler
+      *after* the next source is already attached. Callbacks from a superseded
+      attempt are ignored instead of advancing the queue twice.
+   2. Position is preserved. If HLS dies twenty minutes in, the MP4 resumes at
+      twenty minutes rather than restarting.
+   3. Formats the browser cannot play are skipped without being attempted, so
+      an MKV sitting in videoUrl costs no time. */
+
+/* ═══ Direct upload to R2 ═══════════════════════════════════════════════════
+
+   The file goes from the browser straight to Cloudflare R2. It never passes
+   through our API — Vercel caps a serverless request body at 4.5 MB, so a
+   2 GB film could not be proxied even if we wanted to. The server's only job
+   is signing the request.
+
+   Files under the threshold go up in one PUT. Anything larger is split into
+   parts and uploaded a few at a time, which gives real progress, survives a
+   dropped part without restarting, and is the only way past S3's 5 GB
+   single-PUT limit. */
+
+const R2_PART_SIZE = 16 * 1024 * 1024;   // 16 MB — S3 minimum is 5 MB
+const R2_MULTIPART_THRESHOLD = 48 * 1024 * 1024;
+const R2_CONCURRENCY = 3;                // parallel parts
+const R2_PART_RETRIES = 3;
+
+let _r2Status = null;
+
+async function r2Status(){
+  if(_r2Status)return _r2Status;
+  try{ _r2Status = await api('/admin/storage/status'); }
+  catch(e){ _r2Status = {configured:false, ready:false, error:e.message}; }
+  return _r2Status;
+}
+
+function formatBytes(bytes){
+  if(!bytes)return '0 B';
+  const units=['B','KB','MB','GB','TB'];
+  const i=Math.min(units.length-1,Math.floor(Math.log(bytes)/Math.log(1024)));
+  return (bytes/Math.pow(1024,i)).toFixed(i?1:0)+' '+units[i];
+}
+
+/** PUT one blob to a presigned URL, reporting progress. Resolves to the ETag. */
+function r2PutBlob(url, blob, onProgress){
+  return new Promise((resolve,reject)=>{
+    const xhr=new XMLHttpRequest();
+    xhr.open('PUT',url,true);
+    // fetch() gives no upload progress, so XHR is still the right tool here.
+    if(onProgress&&xhr.upload){
+      xhr.upload.onprogress=e=>{ if(e.lengthComputable)onProgress(e.loaded); };
+    }
+    xhr.onload=()=>{
+      if(xhr.status>=200&&xhr.status<300){
+        // R2 returns the ETag quoted; multipart completion needs it verbatim.
+        resolve(xhr.getResponseHeader('ETag')||'');
+      }else{
+        reject(new Error(`Storage rejected the upload (${xhr.status}). ${xhr.responseText.slice(0,200)}`));
+      }
+    };
+    xhr.onerror=()=>reject(new Error('Network error during upload. If this repeats, check the bucket CORS policy allows PUT from this site.'));
+    xhr.onabort=()=>reject(new Error('Upload cancelled.'));
+    xhr.send(blob);
+    if(onProgress)onProgress._xhr=xhr;   // expose for cancellation
+  });
+}
+
+/**
+ * Upload a File to R2.
+ * @param {File} file
+ * @param {object} opts  { prefix, onProgress(pct, detail), signal }
+ * @returns {Promise<{key:string, playbackUrl:string}>}
+ */
+async function uploadToR2(file, opts={}){
+  const {prefix='video', onProgress=()=>{}} = opts;
+  const state_={cancelled:false, xhrs:new Set()};
+  if(opts.signal){
+    opts.signal.addEventListener('abort',()=>{
+      state_.cancelled=true;
+      state_.xhrs.forEach(x=>{ try{x.abort();}catch(e){} });
+    });
+  }
+
+  const check=()=>{ if(state_.cancelled)throw new Error('Upload cancelled.'); };
+
+  /* ---- Small file: one request ---------------------------------------- */
+  if(file.size < R2_MULTIPART_THRESHOLD){
+    onProgress(0,'Preparing…');
+    const {key,url,playbackUrl}=await api('/admin/storage/upload-url',{
+      method:'POST',
+      body:JSON.stringify({filename:file.name,contentType:file.type,size:file.size,prefix})
+    });
+    check();
+
+    const track=loaded=>onProgress(Math.round(loaded/file.size*100),
+      `${formatBytes(loaded)} of ${formatBytes(file.size)}`);
+    await r2PutBlob(url,file,track);
+    onProgress(100,'Done');
+    return {key,playbackUrl};
+  }
+
+  /* ---- Large file: multipart ------------------------------------------ */
+  onProgress(0,'Starting multipart upload…');
+  const {key,uploadId}=await api('/admin/storage/multipart/create',{
+    method:'POST',
+    body:JSON.stringify({filename:file.name,contentType:file.type,size:file.size,prefix})
+  });
+
+  const partCount=Math.ceil(file.size/R2_PART_SIZE);
+  const parts=new Array(partCount);
+  const progressByPart=new Array(partCount).fill(0);
+
+  const report=()=>{
+    const done=progressByPart.reduce((a,b)=>a+b,0);
+    onProgress(Math.min(99,Math.round(done/file.size*100)),
+      `${formatBytes(done)} of ${formatBytes(file.size)}`);
+  };
+
+  try{
+    // Sign in batches of 100 so a 10 GB file does not need one giant request.
+    const signed={};
+    for(let start=1;start<=partCount;start+=100){
+      check();
+      const batch=[];
+      for(let n=start;n<Math.min(start+100,partCount+1);n++)batch.push(n);
+      const {urls}=await api('/admin/storage/multipart/sign',{
+        method:'POST',
+        body:JSON.stringify({key,uploadId,partNumbers:batch})
+      });
+      Object.assign(signed,urls);
+    }
+
+    // Upload with a small worker pool rather than all at once: hundreds of
+    // parallel 16 MB requests would exhaust memory and saturate the uplink.
+    let cursor=0;
+    const worker=async()=>{
+      while(true){
+        const index=cursor++;
+        if(index>=partCount)return;
+        check();
+
+        const partNumber=index+1;
+        const blob=file.slice(index*R2_PART_SIZE,Math.min((index+1)*R2_PART_SIZE,file.size));
+
+        let lastError=null;
+        for(let attempt=1;attempt<=R2_PART_RETRIES;attempt++){
+          try{
+            const track=loaded=>{ progressByPart[index]=loaded; report(); };
+            const etag=await r2PutBlob(signed[partNumber],blob,track);
+            if(!etag)throw new Error('Storage did not return an ETag for this part.');
+            parts[index]={PartNumber:partNumber,ETag:etag};
+            progressByPart[index]=blob.size;
+            report();
+            lastError=null;
+            break;
+          }catch(err){
+            if(state_.cancelled)throw err;
+            lastError=err;
+            progressByPart[index]=0;
+            report();
+            // Back off before retrying a flaky part.
+            if(attempt<R2_PART_RETRIES){
+              await new Promise(r=>setTimeout(r,500*attempt));
+            }
+          }
+        }
+        if(lastError)throw new Error(`Part ${partNumber} failed after ${R2_PART_RETRIES} attempts: ${lastError.message}`);
+      }
+    };
+
+    await Promise.all(Array.from({length:Math.min(R2_CONCURRENCY,partCount)},worker));
+    check();
+
+    onProgress(99,'Finalising…');
+    const done=await api('/admin/storage/multipart/complete',{
+      method:'POST',
+      body:JSON.stringify({key,uploadId,parts:parts.filter(Boolean)})
+    });
+    onProgress(100,'Done');
+    return {key,playbackUrl:done.playbackUrl};
+
+  }catch(err){
+    // Abandoned parts are billed as storage until cleaned up, so always abort.
+    try{
+      await api('/admin/storage/multipart/abort',{
+        method:'POST',body:JSON.stringify({key,uploadId})
+      });
+    }catch(e){ console.warn('[r2] Could not abort upload:',e.message); }
+    throw err;
+  }
+}
+
+/* ---- Admin UI glue ---------------------------------------------------- */
+
+let _activeUpload=null;
+
+async function handleVideoFile(file,targetInputId,progressElId){
+  const progress=document.getElementById(progressElId);
+  const input=document.getElementById(targetInputId);
+  if(!file||!progress||!input)return;
+
+  const status=await r2Status();
+  if(!status.configured){
+    progress.innerHTML=`<div style="color:var(--red);font-size:.82rem">${esc(status.error||'R2 storage is not configured on the server.')}</div>`;
+    return;
+  }
+  if(!status.ready){
+    progress.innerHTML=`<div style="color:var(--red);font-size:.82rem">R2 is connected but R2_PUBLIC_URL is not set, so uploads would have no playable address. Set it before uploading.</div>`;
+    return;
+  }
+
+  const controller=new AbortController();
+  _activeUpload=controller;
+
+  const render=(pct,detail,error)=>{
+    progress.innerHTML=error
+      ? `<div style="color:var(--red);font-size:.82rem;line-height:1.5">${esc(error)}</div>`
+      : `<div style="font-size:.8rem;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between;gap:10px">
+           <span>${esc(file.name)} · ${esc(detail||'')}</span>
+           <span>${pct}%</span>
+         </div>
+         <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+           <div style="height:100%;width:${pct}%;background:var(--gold);transition:width .2s ease"></div>
+         </div>
+         ${pct<100?`<button type="button" class="btn-review-ghost" style="margin-top:8px;padding:5px 12px;font-size:.78rem" onclick="cancelUpload()">Cancel</button>`:''}`;
+  };
+
+  render(0,'Preparing…');
+
+  try{
+    const {playbackUrl}=await uploadToR2(file,{
+      prefix:'video',
+      signal:controller.signal,
+      onProgress:render
+    });
+    input.value=playbackUrl;
+    progress.innerHTML=`<div style="color:var(--green);font-size:.82rem">✓ Uploaded. The URL has been filled in below.</div>`;
+    showToast('Video uploaded to R2.','success');
+    // Run the existing checker against the fresh URL.
+    if(typeof scheduleUrlCheck==='function')scheduleUrlCheck(input,targetInputId+'_check');
+  }catch(err){
+    render(0,'',err.message);
+    if(!/cancelled/i.test(err.message))showToast(err.message,'error');
+  }finally{
+    _activeUpload=null;
+  }
+}
+
+function cancelUpload(){
+  if(_activeUpload)_activeUpload.abort();
+}
+
+function bindDropZone(zoneId,inputId,progressId){
+  const zone=document.getElementById(zoneId);
+  if(!zone||zone._bound)return;
+  zone._bound=true;
+
+  ['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{
+    e.preventDefault();zone.classList.add('drop-active');
+  }));
+  ['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{
+    e.preventDefault();zone.classList.remove('drop-active');
+  }));
+  zone.addEventListener('drop',e=>{
+    const file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+    if(file)handleVideoFile(file,inputId,progressId);
+  });
+}
+
+function buildSourceCandidates(movie){
+  if(!movie)return [];
+  const raw=[
+    {url:movie.hlsUrl,  label:'adaptive stream'},
+    {url:movie.videoUrl,label:'direct file'}
+  ];
+  const seen=new Set();
+  const out=[];
+  for(const c of raw){
+    if(!c.url)continue;
+    const resolved=resolveSource(c.url);
+    // Deduplicate: the same URL in both fields should not be tried twice.
+    if(!resolved.url||seen.has(resolved.url))continue;
+    seen.add(resolved.url);
+    out.push({label:c.label,resolved});
+  }
+  return out;
+}
+
+function startSourceChain(movie){
+  state._sourceQueue=buildSourceCandidates(movie);
+  state._sourceIndex=-1;
+  state._sourceFailures=[];
+  advanceSource();
+}
+
+function advanceSource(failureReason){
+  const queue=state._sourceQueue||[];
+
+  if(failureReason){
+    const prev=queue[state._sourceIndex];
+    const label=prev?prev.label:'source';
+    state._sourceFailures.push({label,reason:failureReason,actionable:false});
+    console.warn(`[player] ${label} failed — ${failureReason}`);
+
+    // Carry the current position across, so a mid-stream failure resumes
+    // rather than restarting. loadedmetadata applies _resumeTime already.
+    if(video.currentTime>1&&isFinite(video.currentTime)){
+      state._resumeTime=video.currentTime;
+    }
+  }
+
+  // Walk forward to the next candidate the browser can actually play.
+  let next=state._sourceIndex+1;
+  while(next<queue.length){
+    const c=queue[next];
+    if(c.resolved.kind==='unsupported'||c.resolved.kind==='page'){
+      // Format problems come with a concrete fix, so mark them for surfacing.
+      state._sourceFailures.push({label:c.label,reason:c.resolved.reason,actionable:true});
+      console.warn(`[player] skipping ${c.label} — ${c.resolved.reason}`);
+      next++;
+      continue;
+    }
+    break;
+  }
+
+  if(next>=queue.length)return allSourcesFailed();
+
+  state._sourceIndex=next;
+  const candidate=queue[next];
+
+  // Only mention the switch when something actually fell back.
+  if(failureReason){
+    showToast('Switched to a backup source.','info');
+  }
+
+  attachVideoSource(candidate.resolved,state.currentMovie);
+}
+
+function allSourcesFailed(){
+  _hideVideoSkeleton();
+  poster.classList.remove('hidden');
+
+  const failures=state._sourceFailures||[];
+
+  // Prefer a reason the operator can act on ("convert this MKV") over a
+  // generic summary, even when several sources failed. Otherwise a single
+  // cause is stated exactly; anything else stays a summary with detail in
+  // the console.
+  const actionable=failures.find(f=>f.actionable);
+  const message=actionable
+    ? actionable.reason
+    : failures.length===1
+      ? failures[0].reason
+      : failures.length
+        ? 'No working video source for this title.'
+        : 'No video URL is set for this title.';
+
+  showToast(message,'error');
+  if(failures.length>1){
+    console.error('[player] All sources failed:\n  '+
+      failures.map(f=>`${f.label}: ${f.reason}`).join('\n  '));
+  }
+}
+
+function attachVideoSource(input,movie){
+  // Tear down whichever engine was running before.
   if(state.playerHls){state.playerHls.destroy();state.playerHls=null;}
+  if(state.playerDash){try{state.playerDash.reset();}catch(e){}state.playerDash=null;}
   video.pause();
   video.removeAttribute('src');
   video.load();
+
+  // Accepts either a resolved candidate from the chain or a bare URL string,
+  // so direct callers still work.
+  const resolved=(input&&typeof input==='object'&&input.kind)?input:resolveSource(input);
+  state._resolvedSource=resolved;
+
+  if(resolved.kind==='unsupported'||resolved.kind==='page'){
+    return advanceSource(resolved.reason);
+  }
+  if(resolved.note)console.info('[player]',resolved.note);
+
+  // Every callback below checks this token. Tearing down hls.js can fire its
+  // error handler after the next source is attached; without the check that
+  // stale callback would advance the queue a second time and skip a source.
+  const gen=(state._srcGen=(state._srcGen||0)+1);
+  const isCurrent=()=>gen===state._srcGen;
 
   const startPlayback=()=>{
     populateQualityLevels();
@@ -4957,26 +5603,93 @@ function attachVideoSource(src,movie){
     }
   };
 
-  if(src.includes('.m3u8')&&typeof Hls!=='undefined'&&Hls.isSupported()){
+  // Hand the failure to the chain, which tries the next source or gives up.
+  const fail=msg=>{ if(isCurrent())advanceSource(msg); };
+
+  video.addEventListener('error',()=>{
+    // Code 1 is "aborted", which is what our own teardown raises. Treating it
+    // as a source failure would burn a fallback every time we switch.
+    if(video.error&&video.error.code===1)return;
+    fail(describeMediaError(video,resolved));
+  },{once:true});
+
+  const url=resolved.url;
+
+  /* ---- HLS ------------------------------------------------------------ */
+  if(resolved.kind==='hls'){
+    // Safari plays HLS natively and does it better than MSE — prefer it there.
+    if(video.canPlayType('application/vnd.apple.mpegurl')&&!(typeof Hls!=='undefined'&&Hls.isSupported())){
+      video.src=url;
+      video.addEventListener('loadedmetadata',startPlayback,{once:true});
+      return;
+    }
+    if(typeof Hls==='undefined'||!Hls.isSupported()){
+      return fail('This browser cannot play HLS streams. Add an MP4 URL as a fallback.');
+    }
+
     state.playerHls=new Hls({enableWorker:true,lowLatencyMode:false});
-    state.playerHls.loadSource(src);
+    let networkRetries=0,mediaRetries=0;
+
+    state.playerHls.loadSource(url);
     state.playerHls.attachMedia(video);
-    state.playerHls.on(Hls.Events.MANIFEST_PARSED,()=>startPlayback());
+    state.playerHls.on(Hls.Events.MANIFEST_PARSED,()=>{ if(isCurrent())startPlayback(); });
+
     state.playerHls.on(Hls.Events.ERROR,(ev,data)=>{
-      if(!data.fatal)return;
-      _hideVideoSkeleton();
-      showToast('Video stream error.','error');
-      if(data.type===Hls.ErrorTypes.NETWORK_ERROR)state.playerHls.startLoad();
-      else if(data.type===Hls.ErrorTypes.MEDIA_ERROR)state.playerHls.recoverMediaError();
+      if(!data.fatal||!isCurrent())return;
+
+      // Bounded recovery. The previous version retried without a cap, so a
+      // dead URL looped forever and pinned the CPU.
+      if(data.type===Hls.ErrorTypes.NETWORK_ERROR&&networkRetries<3){
+        networkRetries++;
+        console.warn(`[player] HLS network error, retry ${networkRetries}/3`);
+        return state.playerHls.startLoad();
+      }
+      if(data.type===Hls.ErrorTypes.MEDIA_ERROR&&mediaRetries<2){
+        mediaRetries++;
+        console.warn(`[player] HLS media error, recovery ${mediaRetries}/2`);
+        return state.playerHls.recoverMediaError();
+      }
+
+      // CORS is by far the most common cause, and the browser reports it as a
+      // generic network failure, so name it explicitly.
+      let msg='This stream could not be played.';
+      if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
+        msg=data.response&&data.response.code===403
+          ? 'The stream host refused the request (403). Check hotlink protection or token expiry.'
+          : 'The stream could not be reached. HLS needs CORS headers on the host — Access-Control-Allow-Origin must allow this site.';
+      }else if(data.type===Hls.ErrorTypes.MEDIA_ERROR){
+        msg='The stream is corrupt or uses a codec this browser cannot decode.';
+      }
+      // Destroy before handing off, or the dying instance keeps the media
+      // element attached and the next source cannot bind to it.
+      if(state.playerHls){state.playerHls.destroy();state.playerHls=null;}
+      fail(msg);
     });
-  }else if(src.includes('.m3u8')&&video.canPlayType('application/vnd.apple.mpegurl')){
-    video.src=src;
-    video.addEventListener('loadedmetadata',startPlayback,{once:true});
-  }else{
-    video.src=src;
-    video.load();
-    startPlayback();
+    return;
   }
+
+  /* ---- DASH ----------------------------------------------------------- */
+  if(resolved.kind==='dash'){
+    loadDashJs().then(dashjs=>{
+      if(!isCurrent())return;
+      state.playerDash=dashjs.MediaPlayer().create();
+      state.playerDash.initialize(video,url,false);
+      state.playerDash.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED,()=>{ if(isCurrent())startPlayback(); });
+      state.playerDash.on(dashjs.MediaPlayer.events.ERROR,e=>{
+        console.error('[player] DASH error:',e);
+        fail('This DASH stream could not be played. Check the manifest URL and its CORS headers.');
+      });
+    }).catch(()=>fail('The DASH player could not be loaded. Check your connection.'));
+    return;
+  }
+
+  /* ---- Progressive (MP4, WebM, Ogg) ----------------------------------- */
+  video.src=url;
+  video.load();
+  // Wait for metadata rather than calling play() immediately: on a slow or
+  // unseekable host, play() before metadata leaves duration as NaN and the
+  // scrubber unusable.
+  video.addEventListener('loadedmetadata',()=>{ if(isCurrent())startPlayback(); },{once:true});
 }
 
 function openPlayer(movie){
@@ -4988,9 +5701,10 @@ function openPlayer(movie){
     showToast('No content selected.','error');
     return;
   }
-  const src=movie.hlsUrl||movie.videoUrl;
-  if(!src){
-    showToast('No video URL available for this content.','error');
+  // Check there is at least one candidate before opening the overlay, so a
+  // title with nothing playable does not flash an empty player.
+  if(!buildSourceCandidates(movie).length){
+    showToast('No video URL is set for this title.','error');
     return;
   }
 
@@ -5007,7 +5721,7 @@ function openPlayer(movie){
     _navPush('player');
   }
   showControls();
-  attachVideoSource(src,movie);
+  startSourceChain(movie);
   recordView(movie._id);
 }
 
@@ -5270,10 +5984,28 @@ function showUploadForm(main, movieData = null){
           <img id="prvBD" class="img-thumb bd ${vBD?'show':''}" src="${vBD}" alt=""/>
         </div>
         <div class="form-group" style="margin-top:10px"><label class="form-label">Default Video URL (MP4)</label>
-          <input class="admin-input" id="up_video" value="${vVideo}" placeholder="https://…/video.mp4"/>
+          <div class="r2-drop" id="up_video_drop">
+            <input type="file" id="up_video_file" accept="video/*,.mkv,.avi,.mov,.m3u8"
+              style="display:none"
+              onchange="handleVideoFile(this.files[0],'up_video','up_video_progress')"/>
+            <div class="r2-drop-inner">
+              <span class="r2-drop-icon" aria-hidden="true">↑</span>
+              <div>
+                <button type="button" class="btn-review" style="padding:7px 16px;font-size:.83rem"
+                  onclick="document.getElementById('up_video_file').click()">Choose a video file</button>
+                <div class="r2-drop-hint">or drop it here — uploads straight to R2, up to 20 GB</div>
+              </div>
+            </div>
+          </div>
+          <div id="up_video_progress" style="margin:8px 0"></div>
+          <input class="admin-input" id="up_video" value="${vVideo}" placeholder="https://…/video.mp4 — or upload above"
+            oninput="scheduleUrlCheck(this,'up_video_check')"/>
+          <div id="up_video_check" style="margin-top:6px"></div>
         </div>
         <div class="form-group" style="margin-top:10px"><label class="form-label">HLS Stream (.m3u8) — optional</label>
-          <input class="admin-input" id="up_hls" value="${vHls}" placeholder="https://…/stream.m3u8"/>
+          <input class="admin-input" id="up_hls" value="${vHls}" placeholder="https://…/stream.m3u8"
+            oninput="scheduleUrlCheck(this,'up_hls_check')"/>
+          <div id="up_hls_check" style="margin-top:6px"></div>
         </div>
       </div>
 
@@ -5319,6 +6051,7 @@ function showUploadForm(main, movieData = null){
     </div>`;
 
   if(showSeries) renderEpManager();
+  initUploadWidgets(); // bind the R2 drop zone now that the form is in the DOM
 }
 
 function onUpTypeChange(val){
@@ -5534,8 +6267,11 @@ function saveEp(id){
   ep.title         = title;
   ep.description   = desc;
   ep.thumbnailUrl  = thumb;
-  ep.videoUrl      = video.includes('.m3u8') ? '' : video;
-  ep.hlsUrl        = video.includes('.m3u8') ? video : '';
+  // One resolve, used for both fields, so a tokenised HLS URL with no .m3u8
+  // extension lands in hlsUrl instead of being treated as a plain file.
+  const _epSrc = resolveSource(video);
+  ep.videoUrl      = _epSrc.kind === 'hls' ? '' : _epSrc.url;
+  ep.hlsUrl        = _epSrc.kind === 'hls' ? _epSrc.url : '';
   ep.duration      = dur;
   ep.airDate       = air;
   ep._editing      = false;
@@ -5616,8 +6352,8 @@ async function submitMovie(){
     duration:    document.getElementById('up_duration').value ? parseInt(document.getElementById('up_duration').value) : null,
     posterUrl:   document.getElementById('up_poster').value.trim(),
     backdropUrl: document.getElementById('up_backdrop').value.trim(),
-    videoUrl:    document.getElementById('up_video').value.trim(),
-    hlsUrl:      document.getElementById('up_hls').value.trim(),
+    videoUrl:    normalizeMediaUrl(document.getElementById('up_video').value).url,
+    hlsUrl:      normalizeMediaUrl(document.getElementById('up_hls').value).url,
     description:       document.getElementById('up_desc').value.trim(),
     audioLanguages:    document.getElementById('up_audio')?.value.trim() ? document.getElementById('up_audio').value.split(',').map(s=>s.trim()).filter(Boolean) : [],
     subtitleLanguages: document.getElementById('up_subs')?.value.trim()  ? document.getElementById('up_subs').value.split(',').map(s=>s.trim()).filter(Boolean)  : [],
