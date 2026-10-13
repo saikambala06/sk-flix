@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SkFlip">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#13131f"/>
+      <stop offset="1" stop-color="#080810"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="#e0a830" stroke-opacity=".28" stroke-width="4"/>
+  <path d="M212 152v208l154-104z" fill="#e0a830"/>
+  <path d="M152 180v152" stroke="#e0a830" stroke-width="24" stroke-linecap="round" stroke-opacity=".62"/>
+</svg>

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# The admin studio and API are not useful in a search index.
+Disallow: /api/
+
+Sitemap: https://sk-flix-five.vercel.app/sitemap.xml
